@@ -267,7 +267,7 @@ export default function ExportForm() {
             onClick={handleSubmit}
             className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-2 px-6 rounded-xl shadow-md"
           >
-            PDF vorbereiten
+            Atlas Eingabe erstellen
           </button>
         </div>
       </div>
