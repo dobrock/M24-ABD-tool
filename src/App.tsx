@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import logo from './assets/MOTORSPORT24-Logo_768px.png';
 import { generatePDF } from './ExportPDF';
+import VorgangsTest from './components/VorgangsTest';
 
-export default function ExportForm() {
+export default function App() {
   const [items, setItems] = useState([
     { description: '', tariff: '', weight: '', value: '' }
   ]);
@@ -65,31 +66,24 @@ export default function ExportForm() {
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">1. Ware</h2>
           {items.map((item, index) => (
-            <div
-              key={index}
-              className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-4"
-            >
+            <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Warenbezeichnung DE/EN
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Warenbezeichnung DE/EN</label>
                 <input
                   type="text"
                   value={item.description}
                   onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                  placeholder="z. B. Bremssattel / brake caliper"
+                  placeholder="z. B. Bremssattel / brake caliper"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-red-500 focus:border-red-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Warentarifnummer
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Warentarifnummer</label>
                 <input
                   type="text"
                   value={item.tariff}
                   onChange={(e) => handleItemChange(index, 'tariff', e.target.value)}
-                  placeholder="z. B. 87083091"
+                  placeholder="z. B. 87083091"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-red-500 focus:border-red-500"
                 />
               </div>
@@ -99,7 +93,7 @@ export default function ExportForm() {
                   type="text"
                   value={item.weight}
                   onChange={(e) => handleItemChange(index, 'weight', e.target.value)}
-                  placeholder="z. B. 8.5"
+                  placeholder="z. B. 8.5"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-red-500 focus:border-red-500"
                 />
               </div>
@@ -110,7 +104,7 @@ export default function ExportForm() {
                     type="text"
                     value={item.value}
                     onChange={(e) => handleItemChange(index, 'value', e.target.value)}
-                    placeholder="z. B. 1468"
+                    placeholder="z. B. 1468"
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
@@ -303,10 +297,6 @@ export default App;
           </button>
         </div>
       </div>
-
-      <VorgangsTest />
-      import VorgangsTest from './components/VorgangsTest';
-
     </div>
   );
 }
