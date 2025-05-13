@@ -50,8 +50,8 @@ app.post('/api/vorgang', (req, res) => {
 // Vorgänge anzeigen
 app.get('/api/vorgaenge', (req, res) => {
   db.all(`SELECT * FROM vorgaenge ORDER BY erstelldatum DESC`, [], (err, rows) => {
-    if (err) return res.status(500).send(err);
-    res.json(rows);
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows); // Achte darauf, dass hier immer .json() steht!
   });
 });
 
