@@ -8,17 +8,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Lokale DB löschen (nur Entwicklungszwecke, kannst du entfernen für Live)
 const dbFile = './vorgaenge.db';
 if (fs.existsSync(dbFile)) {
   fs.unlinkSync(dbFile);
   console.log('Lokale Datenbank gelöscht, wird beim Start neu erstellt.');
 }
 
-// SQLite initialisieren
 const db = new sqlite3.Database('./vorgaenge.db');
 
-// Tabelle anlegen
 db.run(`
   CREATE TABLE IF NOT EXISTS vorgaenge (
     id TEXT PRIMARY KEY,
@@ -31,7 +28,7 @@ db.run(`
   )
 `);
 
-// Vorgang anlegen (Status automatisch 'angelegt')
+// Vorgang anlegen
 app.post('/api/vorgang', (req, res) => {
   const id = uuidv4();
   const { empfaenger, land, mrn, notizen } = req.body;
@@ -70,7 +67,7 @@ app.delete('/api/vorgaenge/:id', (req, res) => {
   });
 });
 
-// Vorgang bearbeiten (inkl. Empfänger, Land, MRN, Status, Notizen)
+// Vorgang bearbeiten
 app.put('/api/vorgaenge/:id', (req, res) => {
   const { id } = req.params;
   const { empfaenger, land, mrn, status, notizen } = req.body;
@@ -87,21 +84,23 @@ app.put('/api/vorgaenge/:id', (req, res) => {
   );
 });
 
-// Status aktualisieren (nur Status-Feld separat änderbar)
+// Status ändern (korrekt & einzigartig)
 app.patch('/api/vorgaenge/:id/status', (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  const allowedStatuses = ['angelegt', 'beantragt', 'abd', 'agv'];
   const allowedStatuses = ['angelegt', 'ausfuhr_beantragt', 'abd_erhalten', 'agv_vorliegend'];
+
+  if (!status || !allowedStatuses.includes(status)) {
     return res.status(400).json({ error: 'Ungültiger Status' });
   }
+
   db.run(
     'UPDATE vorgaenge SET status = ? WHERE id = ?',
     [status, id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0) return res.status(404).json({ error: 'Vorgang nicht gefunden' });
-      res.json({ message: 'Status aktualisiert' });
+      res.json({ message: 'Status aktualisiert', status });
     }
   );
 });
