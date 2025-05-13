@@ -23,16 +23,34 @@ export default function VorgangDetail() {
     }
   };
 
-  const updateStatus = async (status: string) => {
-    try {
-      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...vorgang, status }),
-      });
-      loadVorgang();
-    } catch (err) {
-      console.error('Fehler beim Statuswechsel:', err);
+  cconst statusDarstellung = (status: string) => {
+    switch (status) {
+      case 'angelegt':
+        return (
+          <span
+            className="cursor-pointer hover:text-blue-600"
+            onClick={() => updateStatus('ausfuhr_beantragt')}
+            title="Klicken, um zu 'Ausfuhr beantragt' zu wechseln"
+          >
+            📝 Angelegt
+          </span>
+        );
+      case 'ausfuhr_beantragt':
+        return (
+          <span
+            className="cursor-pointer hover:text-blue-600"
+            onClick={() => updateStatus('angelegt')}
+            title="Klicken, um zu 'Angelegt' zurückzusetzen"
+          >
+            🚛 Ausfuhr beantragt
+          </span>
+        );
+      case 'abd_erhalten':
+        return <>📄 ABD erhalten</>;
+      case 'agv_vorliegend':
+        return <>✅ AGV liegt vor</>;
+      default:
+        return <>❓ Unbekannt</>;
     }
   };
 
