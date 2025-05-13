@@ -126,15 +126,15 @@ export default function VorgangDetail() {
       <h2 className="text-xl font-bold mt-6 mb-2">Dokumente</h2>
       <div className="flex gap-4 text-xl mb-4">
         {vorgang.hasPdf && (
-          <a href={`${API_BASE_URL}/api/vorgaenge/${id}/download/pdf`} title="PDF herunterladen">📄</a>
+          <a href={`${API_BASE_URL}/api/vorgaenge/${id}/download/pdf`} title="PDF herunterladen" download style={{ fontSize: '75%' }}>📄</a>
         )}
         {vorgang.hasInvoice && (
-          <a href={`${API_BASE_URL}/api/vorgaenge/${id}/download/rechnung`} title="Rechnung herunterladen">📄</a>
+          <a href={`${API_BASE_URL}/api/vorgaenge/${id}/download/rechnung`} title="Rechnung herunterladen" download style={{ fontSize: '75%' }}>📄</a>
         )}
         {vorgang.hasAgv ? (
-          <a href={`${API_BASE_URL}/api/vorgaenge/${id}/download/agv`} title="AGV herunterladen">📄</a>
+          <a href={`${API_BASE_URL}/api/vorgaenge/${id}/download/agv`} title="AGV herunterladen" download style={{ fontSize: '75%' }}>📄</a>
         ) : vorgang.hasAbd ? (
-          <a href={`${API_BASE_URL}/api/vorgaenge/${id}/download/abd`} title="ABD herunterladen">📄</a>
+          <a href={`${API_BASE_URL}/api/vorgaenge/${id}/download/abd`} title="ABD herunterladen" download style={{ fontSize: '75%' }}>📄</a>
         ) : null}
       </div>
 
@@ -144,7 +144,7 @@ export default function VorgangDetail() {
       {uploadForm('abd', 'ABD')}
       {uploadForm('agv', 'AGV')}
 
-      <div className="flex gap-4 mt-8">
+      <div className="flex gap-4 mt-8 justify-end">
         <button
           onClick={() => alert('Bearbeiten (Demo)')}
           className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded"
