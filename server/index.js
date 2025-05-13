@@ -96,6 +96,29 @@ app.put('/api/vorgaenge/:id', (req, res) => {
   );
 });
 
+// Status aktualisieren (nur Status ändern)
+app.patch('/api/vorgaenge/:id/status', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const allowedStatuses = ['offen', 'in Bearbeitung', 'gestellt', 'abgeschlossen'];
+
+  if (!status || !allowedStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Ungültiger Status' });
+  }
+
+  db.run(
+    'UPDATE vorgaenge SET status = ? WHERE id = ?',
+    [status, id],
+    function (err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+      } else {
+        res.json({ message: 'Status aktualisiert' });
+      }
+    }
+  );
+});
+
 // Update: Kundename, MRN, Status
 app.put('/api/vorgaenge/:id', (req, res) => {
   const { id } = req.params;
