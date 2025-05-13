@@ -4,6 +4,9 @@ import ExportForm from './pages/ExportForm';
 import VorgangsListe from './pages/VorgangsListe';
 import VorgangDetail from './pages/VorgangDetail';
 import VorgangNeu from './pages/VorgangNeu';
+import VorgangsVerwaltung from "./pages/VorgangsVerwaltung";
+
+<Route path="/verwaltung" element={<VorgangsVerwaltung />} />
 
 export default function App() {
   return (
