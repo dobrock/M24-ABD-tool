@@ -110,29 +110,58 @@ export default function VorgangsListe() {
                     <span>{statusIcons[vorgang.status]} {statusLabels[vorgang.status]}</span>
                   )}
                 </td>
-                <td className="px-4 py-2 text-xl flex gap-2 justify-center">
-                  {vorgang.hasPdf ? <a href="#" title="PDF herunterladen">📄</a> : null}
-                  {vorgang.hasInvoice ? <a href="#" title="Rechnung herunterladen">📄</a> : null}
-                  {vorgang.hasAgv ? (
-                    <a href="#" title="AGV herunterladen">📄</a>
-                  ) : vorgang.hasAbd ? (
-                    <a href="#" title="ABD herunterladen">📄</a>
-                  ) : null}
-                </td>
-                <td className="px-4 py-2 flex gap-2 justify-center">
-                  <button
-                    onClick={() => navigate(`/vorgaenge/${vorgang.id}`)}
-                    title="Bearbeiten"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    onClick={() => handleDelete(vorgang.id)}
-                    title="Löschen"
-                  >
-                    ❌
-                  </button>
-                </td>
+                <td className="px-4 py-2 text-xl whitespace-nowrap">
+  {vorgang.hasPdf && (
+    <a
+      href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/pdf`}
+      title="PDF herunterladen"
+      className="mr-2"
+    >
+      📄
+    </a>
+  )}
+  {vorgang.hasInvoice && (
+    <a
+      href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/rechnung`}
+      title="Rechnung herunterladen"
+      className="mr-2"
+    >
+      📄
+    </a>
+  )}
+  {vorgang.hasAgv ? (
+    <a
+      href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/agv`}
+      title="AGV herunterladen"
+    >
+      📄
+    </a>
+  ) : vorgang.hasAbd ? (
+    <a
+      href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/abd`}
+      title="ABD herunterladen"
+    >
+      📄
+    </a>
+  ) : null}
+</td>
+<td className="px-4 py-2 text-right">
+  <button
+    onClick={() => navigate(`/vorgaenge/${vorgang.id}`)}
+    title="Bearbeiten"
+    style={{ fontSize: '75%' }}
+  >
+    ✏️
+  </button>
+  <button
+    onClick={() => handleDelete(vorgang.id)}
+    title="Löschen"
+    style={{ fontSize: '75%' }}
+    className="ml-2"
+  >
+    ❌
+  </button>
+</td>
               </tr>
             ))}
           </tbody>
