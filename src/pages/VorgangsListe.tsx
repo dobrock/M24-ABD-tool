@@ -7,6 +7,7 @@ interface Vorgang {
   kundename: string;
   mrn: string;
   status: string;
+  erstelldatum: string;
 }
 
 export default function VorgangsListe() {
@@ -81,7 +82,7 @@ export default function VorgangsListe() {
             onClick={() => handleStatusUpdate(vorgang.id, 'abd_erhalten')}
             className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
           >
-            📄 ABD hochladen (simuliert)
+            📄 ABD erhalten (simuliert)
           </button>
         );
       case 'abd_erhalten':
@@ -94,11 +95,23 @@ export default function VorgangsListe() {
           </button>
         );
       case 'agv_vorliegend':
-        return <span className="text-green-700">✅ Vorgang abgeschlossen</span>;
+        return <span className="text-green-700">✅ Abgeschlossen</span>;
       default:
         return null;
     }
   };
+
+  const renderDownloadIcons = (vorgang: Vorgang) => (
+    <div className="flex gap-2 text-xl">
+      <a href="#" title="PDF herunterladen">📥</a>
+      <a href="#" title="Rechnung herunterladen">📥</a>
+      {vorgang.status === 'agv_vorliegend' ? (
+        <a href="#" title="AGV herunterladen">📥</a>
+      ) : (
+        <a href="#" title="ABD herunterladen">📥</a>
+      )}
+    </div>
+  );
 
   return (
     <div className="p-8">
@@ -111,7 +124,9 @@ export default function VorgangsListe() {
             <tr>
               <th className="px-4 py-2">Kundename</th>
               <th className="px-4 py-2">MRN</th>
+              <th className="px-4 py-2">Erstellt am</th>
               <th className="px-4 py-2">Status</th>
+              <th className="px-4 py-2">Downloads</th>
               <th className="px-4 py-2">Aktion</th>
               <th className="px-4 py-2">Löschen</th>
             </tr>
@@ -121,7 +136,9 @@ export default function VorgangsListe() {
               <tr key={vorgang.id} className="border-b">
                 <td className="px-4 py-2">{vorgang.kundename}</td>
                 <td className="px-4 py-2">{vorgang.mrn}</td>
+                <td className="px-4 py-2">{new Date(vorgang.erstelldatum).toLocaleDateString()}</td>
                 <td className="px-4 py-2">{statusDarstellung(vorgang.status)}</td>
+                <td className="px-4 py-2">{renderDownloadIcons(vorgang)}</td>
                 <td className="px-4 py-2">{naechsteAktion(vorgang)}</td>
                 <td className="px-4 py-2">
                   <button
