@@ -23,7 +23,24 @@ export default function VorgangDetail() {
     }
   };
 
-  cconst statusDarstellung = (status: string) => {
+  const updateStatus = async (status: string) => {
+    try {
+      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...vorgang, status }),
+      });
+      loadVorgang();
+    } catch (err) {
+      console.error('Fehler beim Statuswechsel:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadVorgang();
+  }, [id]);
+
+  const statusDarstellung = (status: string) => {
     switch (status) {
       case 'angelegt':
         return (
@@ -40,7 +57,7 @@ export default function VorgangDetail() {
           <span
             className="cursor-pointer hover:text-blue-600"
             onClick={() => updateStatus('angelegt')}
-            title="Klicken, um zu 'Angelegt' zurückzusetzen"
+            title="Klicken, um zurück zu 'Angelegt' zu wechseln"
           >
             🚛 Ausfuhr beantragt
           </span>
@@ -51,59 +68,6 @@ export default function VorgangDetail() {
         return <>✅ AGV liegt vor</>;
       default:
         return <>❓ Unbekannt</>;
-    }
-  };
-
-  useEffect(() => {
-    loadVorgang();
-  }, [id]);
-
-  const statusDarstellung = (status: string) => {
-    switch (status) {
-      case 'angelegt':
-        return <>📝 Angelegt</>;
-      case 'ausfuhr_beantragt':
-        return <>🚛 Ausfuhr beantragt</>;
-      case 'abd_erhalten':
-        return <>📄 ABD erhalten</>;
-      case 'agv_vorliegend':
-        return <>✅ AGV liegt vor</>;
-      default:
-        return <>❓ Unbekannt</>;
-    }
-  };
-
-  const nächsteStatusAktion = (status: string) => {
-    switch (status) {
-      case 'angelegt':
-        return (
-          <button
-            onClick={() => updateStatus('ausfuhr_beantragt')}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            ➡️ Ausfuhr beantragt
-          </button>
-        );
-      case 'ausfuhr_beantragt':
-        return (
-          <button
-            onClick={() => updateStatus('abd_erhalten')}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            ➡️ ABD erhalten
-          </button>
-        );
-      case 'abd_erhalten':
-        return (
-          <button
-            onClick={() => updateStatus('agv_vorliegend')}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            ➡️ AGV liegt vor
-          </button>
-        );
-      default:
-        return null;
     }
   };
 
@@ -129,7 +93,6 @@ export default function VorgangDetail() {
         <div><strong>MRN:</strong> {vorgang.mrn}</div>
         <div><strong>Erstellt am:</strong> {new Date(vorgang.erstelldatum).toLocaleDateString()}</div>
         <div><strong>Status:</strong> {statusDarstellung(vorgang.status)}</div>
-        <div>{nächsteStatusAktion(vorgang.status)}</div>
       </div>
 
       <h2 className="text-xl font-bold mt-6 mb-2">Dokumente</h2>
