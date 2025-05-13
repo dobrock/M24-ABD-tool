@@ -1,18 +1,32 @@
 import React, { useEffect, useState } from 'react';
 
+// Umgebungsvariable für API URL (local fallback)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+// Typisierung des Vorgangs
+interface Vorgang {
+  id: string;
+  kundename: string;
+  mrn: string;
+}
+
 export default function VorgangsListe() {
-  const [vorgaenge, setVorgaenge] = useState<any[]>([]);
+  const [vorgaenge, setVorgaenge] = useState<Vorgang[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState({ kundename: '', mrn: '' });
+  const [error, setError] = useState<string | null>(null);
 
   // Vorgänge laden
   const loadVorgaenge = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/vorgaenge');
+      const res = await fetch(`${API_BASE_URL}/api/vorgaenge`);
+      if (!res.ok) throw new Error('Fehler beim Laden der Vorgänge');
       const data = await res.json();
       setVorgaenge(data);
+      setError(null);
     } catch (err) {
       console.error('Fehler beim Laden:', err);
+      setError('Fehler beim Laden der Vorgänge');
     }
   };
 
@@ -20,26 +34,33 @@ export default function VorgangsListe() {
     loadVorgaenge();
   }, []);
 
-  // Löschen
+  // Vorgang löschen
   const handleDelete = async (id: string) => {
     if (!window.confirm('Diesen Vorgang wirklich löschen?')) return;
     try {
-      await fetch(`http://localhost:3001/api/vorgaenge/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Fehler beim Löschen');
       loadVorgaenge();
     } catch (err) {
       console.error('Fehler beim Löschen:', err);
+      setError('Fehler beim Löschen des Vorgangs');
     }
   };
 
-  // Bearbeiten
-  const handleEdit = (vorgang: any) => {
+  // Vorgang bearbeiten
+  const handleEdit = (vorgang: Vorgang) => {
     setEditingId(vorgang.id);
     setEditData({ kundename: vorgang.kundename, mrn: vorgang.mrn });
   };
 
+  // Vorgang aktualisieren
   const handleUpdate = async (id: string) => {
+    if (!editData.kundename || !editData.mrn) {
+      alert('Bitte Kundename und MRN eingeben.');
+      return;
+    }
     try {
-      const res = await fetch(`http://localhost:3001/api/vorgaenge/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editData),
@@ -52,12 +73,14 @@ export default function VorgangsListe() {
       }
     } catch (err) {
       console.error('Fehler beim Speichern:', err);
+      setError('Fehler beim Aktualisieren des Vorgangs');
     }
   };
 
   return (
     <div className="p-8">
       <h1 className="text-xl font-bold mb-4">Vorgänge (Bearbeiten / Löschen)</h1>
+      {error && <div className="text-red-500 mb-4">{error}</div>}
       {vorgaenge.length === 0 ? (
         <p>Keine Vorgänge vorhanden.</p>
       ) : (
