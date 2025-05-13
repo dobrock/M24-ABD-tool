@@ -7,6 +7,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const fs = require('fs');
+const dbFile = './vorgaenge.db';
+
+if (fs.existsSync(dbFile)) {
+  fs.unlinkSync(dbFile);
+  console.log('Lokale Datenbank gelöscht, wird beim Start neu erstellt.');
+}
+
 // SQLite Datenbank initialisieren
 const db = new sqlite3.Database('./vorgaenge.db');
 
