@@ -110,12 +110,13 @@ export default function VorgangsListe() {
                     <span>{statusIcons[vorgang.status]} {statusLabels[vorgang.status]}</span>
                   )}
                 </td>
-                <td className="px-4 py-2 text-xl whitespace-nowrap">
+                <td className="px-4 py-2 text-xl whitespace-nowrap text-center">
   {vorgang.hasPdf && (
     <a
       href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/pdf`}
       title="PDF herunterladen"
       className="mr-2"
+      style={{ fontSize: '75%' }}
     >
       📄
     </a>
@@ -125,6 +126,7 @@ export default function VorgangsListe() {
       href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/rechnung`}
       title="Rechnung herunterladen"
       className="mr-2"
+      style={{ fontSize: '75%' }}
     >
       📄
     </a>
@@ -133,6 +135,7 @@ export default function VorgangsListe() {
     <a
       href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/agv`}
       title="AGV herunterladen"
+      style={{ fontSize: '75%' }}
     >
       📄
     </a>
@@ -140,6 +143,7 @@ export default function VorgangsListe() {
     <a
       href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/abd`}
       title="ABD herunterladen"
+      style={{ fontSize: '75%' }}
     >
       📄
     </a>
