@@ -92,7 +92,7 @@ app.patch('/api/vorgaenge/:id/status', (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   const allowedStatuses = ['angelegt', 'beantragt', 'abd', 'agv'];
-  if (!status || !allowedStatuses.includes(status)) {
+  const allowedStatuses = ['angelegt', 'ausfuhr_beantragt', 'abd_erhalten', 'agv_vorliegend'];
     return res.status(400).json({ error: 'Ungültiger Status' });
   }
   db.run(
