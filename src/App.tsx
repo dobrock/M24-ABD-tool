@@ -6,8 +6,6 @@ import VorgangDetail from './pages/VorgangDetail';
 import VorgangNeu from './pages/VorgangNeu';
 import VorgangsVerwaltung from "./pages/VorgangsVerwaltung";
 
-<Route path="/verwaltung" element={<VorgangsVerwaltung />} />
-
 export default function App() {
   return (
     <Router>
@@ -15,12 +13,14 @@ export default function App() {
         <Link to="/">Neue Ausfuhranmeldung</Link>
         <Link to="/vorgaenge">Vorgänge verwalten</Link>
         <Link to="/vorgang-neu">Neuer Vorgang</Link>
+        <Link to="/verwaltung">Verwaltung (Test)</Link>
       </nav>
       <Routes>
         <Route path="/" element={<ExportForm />} />
         <Route path="/vorgaenge" element={<VorgangsListe />} />
         <Route path="/vorgang-neu" element={<VorgangNeu />} />
         <Route path="/vorgaenge/:id" element={<VorgangDetail />} />
+        <Route path="/verwaltung" element={<VorgangsVerwaltung />} />
       </Routes>
     </Router>
   );
