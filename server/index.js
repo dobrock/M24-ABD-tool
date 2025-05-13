@@ -24,17 +24,21 @@ db.run(`
     land TEXT,
     mrn TEXT,
     status TEXT,
-    notizen TEXT
+    notizen TEXT,
+    hasPdf INTEGER DEFAULT 0,
+    hasInvoice INTEGER DEFAULT 0,
+    hasAbd INTEGER DEFAULT 0,
+    hasAgv INTEGER DEFAULT 0
   )
 `);
 
-// Vorgang anlegen
+// Vorgang anlegen (setzt alle Dokument-Status auf false)
 app.post('/api/vorgang', (req, res) => {
   const id = uuidv4();
   const { empfaenger, land, mrn, notizen } = req.body;
   const datum = new Date().toISOString();
-  db.run(`INSERT INTO vorgaenge (id, erstelldatum, empfaenger, land, mrn, status, notizen)
-    VALUES (?, ?, ?, ?, ?, 'angelegt', ?)`,
+  db.run(`INSERT INTO vorgaenge (id, erstelldatum, empfaenger, land, mrn, status, notizen, hasPdf, hasInvoice, hasAbd, hasAgv)
+    VALUES (?, ?, ?, ?, ?, 'angelegt', ?, 0, 0, 0, 0)`,
     [id, datum, empfaenger, land, mrn, notizen || ''],
     (err) => {
       if (err) return res.status(500).send(err);
@@ -67,16 +71,16 @@ app.delete('/api/vorgaenge/:id', (req, res) => {
   });
 });
 
-// Vorgang bearbeiten
+// Vorgang bearbeiten (inkl. Dokumente)
 app.put('/api/vorgaenge/:id', (req, res) => {
   const { id } = req.params;
-  const { empfaenger, land, mrn, status, notizen } = req.body;
+  const { empfaenger, land, mrn, status, notizen, hasPdf, hasInvoice, hasAbd, hasAgv } = req.body;
   if (!empfaenger || !land || !mrn || !status) {
     return res.status(400).json({ error: 'Empfänger, Land, MRN und Status erforderlich' });
   }
   db.run(
-    'UPDATE vorgaenge SET empfaenger = ?, land = ?, mrn = ?, status = ?, notizen = ? WHERE id = ?',
-    [empfaenger, land, mrn, status, notizen || '', id],
+    'UPDATE vorgaenge SET empfaenger = ?, land = ?, mrn = ?, status = ?, notizen = ?, hasPdf = ?, hasInvoice = ?, hasAbd = ?, hasAgv = ? WHERE id = ?',
+    [empfaenger, land, mrn, status, notizen || '', hasPdf ? 1 : 0, hasInvoice ? 1 : 0, hasAbd ? 1 : 0, hasAgv ? 1 : 0, id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ message: 'Vorgang aktualisiert' });
