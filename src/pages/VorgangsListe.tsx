@@ -10,10 +10,10 @@ interface Vorgang {
   mrn: string;
   erstelldatum: string;
   status: string;
-  hasPdf?: boolean;
-  hasInvoice?: boolean;
-  hasAbd?: boolean;
-  hasAgv?: boolean;
+  hasPdf: number;
+  hasInvoice: number;
+  hasAbd: number;
+  hasAgv: number;
 }
 
 export default function VorgangsListe() {
@@ -35,7 +35,7 @@ export default function VorgangsListe() {
   }, []);
 
   const toggleStatus = async (vorgang: Vorgang) => {
-    const newStatus = vorgang.status === 'angelegt' ? 'ausfuhr_beantragt' : 'angelegt';
+    let newStatus = vorgang.status === 'angelegt' ? 'ausfuhr_beantragt' : 'angelegt';
     try {
       await fetch(`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/status`, {
         method: 'PATCH',
@@ -78,16 +78,16 @@ export default function VorgangsListe() {
       {vorgaenge.length === 0 ? (
         <p>Keine Vorgänge vorhanden.</p>
       ) : (
-        <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+        <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden table-fixed">
           <thead className="bg-gray-200">
             <tr>
-              <th className="px-4 py-2 w-48 text-left">Empfänger</th>
-              <th className="px-4 py-2 w-32 text-left">Zielland</th>
-              <th className="px-4 py-2 w-40 text-left">MRN</th>
-              <th className="px-4 py-2 w-32 text-left">Erstellt am</th>
-              <th className="px-4 py-2 w-48 text-left">Status</th>
-              <th className="px-4 py-2 w-32 text-center">Dokumente</th>
-              <th className="px-4 py-2 w-32 text-center">Aktion</th>
+              <th className="w-48 text-left px-4 py-2">Empfänger</th>
+              <th className="w-24 text-left px-4 py-2">Zielland</th>
+              <th className="w-32 text-left px-4 py-2">MRN</th>
+              <th className="w-32 text-left px-4 py-2">Erstellt am</th>
+              <th className="w-48 text-left px-4 py-2">Status</th>
+              <th className="w-40 text-center px-4 py-2">Dokumente</th>
+              <th className="w-32 text-center px-4 py-2">Aktion</th>
             </tr>
           </thead>
           <tbody>
@@ -95,7 +95,7 @@ export default function VorgangsListe() {
               <tr key={vorgang.id} className="border-b">
                 <td className="px-4 py-2">{vorgang.empfaenger}</td>
                 <td className="px-4 py-2">{vorgang.land}</td>
-                <td className="px-2 py-2">{vorgang.mrn}</td>
+                <td className="px-4 py-2">{vorgang.mrn}</td>
                 <td className="px-4 py-2">{new Date(vorgang.erstelldatum).toLocaleDateString()}</td>
                 <td className="px-4 py-2">
                   {['angelegt', 'ausfuhr_beantragt'].includes(vorgang.status) ? (
@@ -110,16 +110,16 @@ export default function VorgangsListe() {
                     <span>{statusIcons[vorgang.status]} {statusLabels[vorgang.status]}</span>
                   )}
                 </td>
-                <td className="px-4 py-2 text-xl whitespace-nowrap text-center">
-                  {vorgang.hasPdf && <a href="#" title="PDF herunterladen" className="mr-2">📄</a>}
-                  {vorgang.hasInvoice && <a href="#" title="Rechnung herunterladen" className="mr-2">📄</a>}
+                <td className="px-4 py-2 text-xl flex gap-2 justify-center">
+                  {vorgang.hasPdf ? <a href="#" title="PDF herunterladen">📄</a> : null}
+                  {vorgang.hasInvoice ? <a href="#" title="Rechnung herunterladen">📄</a> : null}
                   {vorgang.hasAgv ? (
                     <a href="#" title="AGV herunterladen">📄</a>
                   ) : vorgang.hasAbd ? (
                     <a href="#" title="ABD herunterladen">📄</a>
                   ) : null}
                 </td>
-                <td className="px-4 py-2 flex gap-2 justify-end">
+                <td className="px-4 py-2 flex gap-2 justify-center">
                   <button
                     onClick={() => navigate(`/vorgaenge/${vorgang.id}`)}
                     title="Bearbeiten"
