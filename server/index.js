@@ -2,60 +2,58 @@ const express = require('express');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const sqlite3 = require('sqlite3').verbose();
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const fs = require('fs');
+// Lokale DB löschen (nur Entwicklungszwecke, kannst du entfernen für Live)
 const dbFile = './vorgaenge.db';
-
 if (fs.existsSync(dbFile)) {
   fs.unlinkSync(dbFile);
   console.log('Lokale Datenbank gelöscht, wird beim Start neu erstellt.');
 }
 
-// SQLite Datenbank initialisieren
+// SQLite initialisieren
 const db = new sqlite3.Database('./vorgaenge.db');
 
-// Tabelle anlegen (falls noch nicht existiert)
+// Tabelle anlegen
 db.run(`
   CREATE TABLE IF NOT EXISTS vorgaenge (
     id TEXT PRIMARY KEY,
     erstelldatum TEXT,
-    kundename TEXT,
-    mrn TEXT,
     empfaenger TEXT,
     land TEXT,
-    waren TEXT,
+    mrn TEXT,
     status TEXT,
     notizen TEXT
   )
 `);
 
-// Vorgang anlegen
+// Vorgang anlegen (Status automatisch 'angelegt')
 app.post('/api/vorgang', (req, res) => {
   const id = uuidv4();
-  const { kundename, mrn, empfaenger, land, waren, status, notizen } = req.body;
+  const { empfaenger, land, mrn, notizen } = req.body;
   const datum = new Date().toISOString();
-  db.run(`INSERT INTO vorgaenge (id, erstelldatum, kundename, mrn, empfaenger, land, waren, status, notizen)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, datum, kundename, mrn, empfaenger, land, waren, status || 'offen', notizen || ''],
+  db.run(`INSERT INTO vorgaenge (id, erstelldatum, empfaenger, land, mrn, status, notizen)
+    VALUES (?, ?, ?, ?, ?, 'angelegt', ?)`,
+    [id, datum, empfaenger, land, mrn, notizen || ''],
     (err) => {
       if (err) return res.status(500).send(err);
       res.json({ success: true, id });
     });
 });
 
-// Vorgänge anzeigen
+// Alle Vorgänge anzeigen
 app.get('/api/vorgaenge', (req, res) => {
   db.all(`SELECT * FROM vorgaenge ORDER BY erstelldatum DESC`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(rows); // Achte darauf, dass hier immer .json() steht!
+    res.json(rows);
   });
 });
 
-// Vorgang nach ID anzeigen
+// Einzelnen Vorgang anzeigen
 app.get('/api/vorgang/:id', (req, res) => {
   db.get(`SELECT * FROM vorgaenge WHERE id = ?`, [req.params.id], (err, row) => {
     if (err) return res.status(500).send(err);
@@ -66,75 +64,44 @@ app.get('/api/vorgang/:id', (req, res) => {
 
 // Vorgang löschen
 app.delete('/api/vorgaenge/:id', (req, res) => {
-  const { id } = req.params;
-  db.run('DELETE FROM vorgaenge WHERE id = ?', id, function (err) {
-    if (err) {
-      res.status(500).json({ error: err.message });
-    } else {
-      res.json({ message: 'Vorgang gelöscht' });
-    }
+  db.run('DELETE FROM vorgaenge WHERE id = ?', [req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Vorgang gelöscht' });
   });
 });
 
-// Vorgang bearbeiten (Kundenname & MRN)
+// Vorgang bearbeiten (inkl. Empfänger, Land, MRN, Status, Notizen)
 app.put('/api/vorgaenge/:id', (req, res) => {
   const { id } = req.params;
-  const { kundename, mrn } = req.body;
-  if (!kundename || !mrn) {
-    return res.status(400).json({ error: 'Kundenname und MRN erforderlich' });
+  const { empfaenger, land, mrn, status, notizen } = req.body;
+  if (!empfaenger || !land || !mrn || !status) {
+    return res.status(400).json({ error: 'Empfänger, Land, MRN und Status erforderlich' });
   }
   db.run(
-    'UPDATE vorgaenge SET kundename = ?, mrn = ? WHERE id = ?',
-    [kundename, mrn, id],
+    'UPDATE vorgaenge SET empfaenger = ?, land = ?, mrn = ?, status = ?, notizen = ? WHERE id = ?',
+    [empfaenger, land, mrn, status, notizen || '', id],
     function (err) {
-      if (err) {
-        res.status(500).json({ error: err.message });
-      } else {
-        res.json({ message: 'Vorgang aktualisiert' });
-      }
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Vorgang aktualisiert' });
     }
   );
 });
 
-// Status aktualisieren (nur Status ändern)
+// Status aktualisieren (nur Status-Feld separat änderbar)
 app.patch('/api/vorgaenge/:id/status', (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  const allowedStatuses = ['offen', 'in Bearbeitung', 'gestellt', 'abgeschlossen'];
-
+  const allowedStatuses = ['angelegt', 'beantragt', 'abd', 'agv'];
   if (!status || !allowedStatuses.includes(status)) {
     return res.status(400).json({ error: 'Ungültiger Status' });
   }
-
   db.run(
     'UPDATE vorgaenge SET status = ? WHERE id = ?',
     [status, id],
     function (err) {
-      if (err) {
-        res.status(500).json({ error: err.message });
-      } else {
-        res.json({ message: 'Status aktualisiert' });
-      }
-    }
-  );
-});
-
-// Update: Kundename, MRN, Status
-app.put('/api/vorgaenge/:id', (req, res) => {
-  const { id } = req.params;
-  const { kundename, mrn, status } = req.body;
-  if (!kundename || !mrn) {
-    return res.status(400).json({ error: 'Kundename und MRN erforderlich' });
-  }
-  db.run(
-    'UPDATE vorgaenge SET kundename = ?, mrn = ?, status = ? WHERE id = ?',
-    [kundename, mrn, status, id],
-    function (err) {
-      if (err) {
-        res.status(500).json({ error: err.message });
-      } else {
-        res.json({ message: 'Vorgang aktualisiert' });
-      }
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: 'Vorgang nicht gefunden' });
+      res.json({ message: 'Status aktualisiert' });
     }
   );
 });
