@@ -13,7 +13,7 @@ app.use(express.json());
 // SQLite initialisieren
 const db = new sqlite3.Database('./vorgaenge.db');
 
-// Tabelle anlegen (inkl. neue Felder)
+// Tabelle anlegen inkl. Felder
 db.run(`
   CREATE TABLE IF NOT EXISTS vorgaenge (
     id TEXT PRIMARY KEY,
@@ -26,7 +26,7 @@ db.run(`
   )
 `);
 
-// --- Upload Setup ---
+// Upload Setup (Multer)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = `./uploads/${req.params.id}`;
@@ -39,23 +39,23 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// --- API Endpunkte ---
-
 // Vorgang anlegen
 app.post('/api/vorgang', (req, res) => {
   const id = uuidv4();
   const { empfaenger, land, mrn, notizen } = req.body;
   const datum = new Date().toISOString();
-  db.run(`INSERT INTO vorgaenge (id, erstelldatum, empfaenger, land, mrn, status, notizen)
-    VALUES (?, ?, ?, ?, ?, 'angelegt', ?)`,
+  db.run(
+    `INSERT INTO vorgaenge (id, erstelldatum, empfaenger, land, mrn, status, notizen)
+     VALUES (?, ?, ?, ?, ?, 'angelegt', ?)`,
     [id, datum, empfaenger, land, mrn, notizen || ''],
     (err) => {
       if (err) return res.status(500).send(err);
       res.json({ success: true, id });
-    });
+    }
+  );
 });
 
-// Alle Vorgänge anzeigen mit Dokumentprüfung
+// Vorgänge abrufen mit Dokumentstatus
 app.get('/api/vorgaenge', (req, res) => {
   db.all(`SELECT * FROM vorgaenge ORDER BY erstelldatum DESC`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -106,10 +106,10 @@ app.patch('/api/vorgaenge/:id/status', (req, res) => {
   });
 });
 
-// Datei Upload + Status optional setzen (für abd, agv)
+// Upload Dateien & Status setzen (ABD & AGV)
 app.post('/api/vorgaenge/:id/upload/:type', upload.single('file'), (req, res) => {
   const { type } = req.params;
-  const allowedTypes = ['rechnung', 'abd', 'agv'];
+  const allowedTypes = ['pdf', 'rechnung', 'abd', 'agv'];
   if (!allowedTypes.includes(type)) return res.status(400).json({ error: 'Ungültiger Dokumententyp' });
 
   let newStatus = null;
