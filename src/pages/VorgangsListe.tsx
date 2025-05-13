@@ -106,14 +106,18 @@ export default function VorgangsListe() {
                     <span>{statusIcons[vorgang.status]} {statusLabels[vorgang.status]}</span>
                   )}
                 </td>
-                <td className="px-4 py-2 flex gap-2 text-xl">
-                 {vorgang.hasPdf && <a href="#" title="PDF herunterladen">📄</a>}
-                 {vorgang.hasInvoice && <a href="#" title="Rechnung herunterladen">📄</a>}
-                 {vorgang.hasAgv ? (
-                <a href="#" title="AGV herunterladen">📄</a>
-  ) : (
-    vorgang.hasAbd && <a href="#" title="ABD herunterladen">📄</a>
+                <td className="px-4 py-2 text-xl whitespace-nowrap">
+  {vorgang.hasPdf && (
+    <a href="#" title="PDF herunterladen" className="mr-2">📄</a>
   )}
+  {vorgang.hasInvoice && (
+    <a href="#" title="Rechnung herunterladen" className="mr-2">📄</a>
+  )}
+  {vorgang.hasAgv ? (
+    <a href="#" title="AGV herunterladen">📄</a>
+  ) : vorgang.hasAbd ? (
+    <a href="#" title="ABD herunterladen">📄</a>
+  ) : null}
 </td>
                 <td className="px-4 py-2 flex gap-2 justify-end">
                   <button
