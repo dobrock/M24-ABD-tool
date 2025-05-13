@@ -65,12 +65,12 @@ export default function VorgangsListe() {
     }
   };
 
-  const handleQuickStatus = async (id: string, newStatus: string) => {
+  const handleStatusQuickUpdate = async (id: string, status: string) => {
     try {
-      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, {
-        method: 'PUT',
+      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}/status`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status }),
       });
       loadVorgaenge();
     } catch (err) {
@@ -121,33 +121,58 @@ export default function VorgangsListe() {
                   )}
                 </td>
                 <td className="px-4 py-2">{vorgang.status}</td>
-                <td className="px-4 py-2 flex gap-2 flex-wrap">
+                <td className="px-4 py-2 flex flex-col gap-2">
                   {editingId === vorgang.id ? (
                     <>
-                      <button onClick={() => handleUpdate(vorgang.id)} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">
+                      <button
+                        onClick={() => handleUpdate(vorgang.id)}
+                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+                      >
                         Speichern
                       </button>
-                      <button onClick={() => setEditingId(null)} className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded">
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded"
+                      >
                         Abbrechen
                       </button>
                     </>
                   ) : (
                     <>
-                      <button onClick={() => handleEdit(vorgang)} className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded">
-                        Bearbeiten
-                      </button>
-                      <button onClick={() => handleDelete(vorgang.id)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
-                        Löschen
-                      </button>
-                      <button onClick={() => handleQuickStatus(vorgang.id, 'offen')} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
-                        Offen
-                      </button>
-                      <button onClick={() => handleQuickStatus(vorgang.id, 'fertig')} className="bg-green-700 hover:bg-green-800 text-white px-3 py-1 rounded">
-                        Fertig
-                      </button>
-                      <button onClick={() => handleQuickStatus(vorgang.id, 'storniert')} className="bg-red-700 hover:bg-red-800 text-white px-3 py-1 rounded">
-                        Storniert
-                      </button>
+                      <div className="flex gap-1 mb-1">
+                        <button
+                          onClick={() => handleEdit(vorgang)}
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
+                        >
+                          Bearbeiten
+                        </button>
+                        <button
+                          onClick={() => handleDelete(vorgang.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                        >
+                          Löschen
+                        </button>
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => handleStatusQuickUpdate(vorgang.id, 'offen')}
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs"
+                        >
+                          Offen
+                        </button>
+                        <button
+                          onClick={() => handleStatusQuickUpdate(vorgang.id, 'fertig')}
+                          className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs"
+                        >
+                          Fertig
+                        </button>
+                        <button
+                          onClick={() => handleStatusQuickUpdate(vorgang.id, 'storniert')}
+                          className="bg-gray-700 hover:bg-gray-800 text-white px-2 py-1 rounded text-xs"
+                        >
+                          Storniert
+                        </button>
+                      </div>
                     </>
                   )}
                 </td>
