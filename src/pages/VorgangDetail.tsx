@@ -23,12 +23,17 @@ export default function VorgangDetail() {
     }
   };
 
-  const updateStatus = async (status: string) => {
+  useEffect(() => {
+    loadVorgang();
+  }, [id]);
+
+  const toggleStatus = async () => {
+    const newStatus = vorgang.status === 'angelegt' ? 'ausfuhr_beantragt' : 'angelegt';
     try {
-      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, {
-        method: 'PUT',
+      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}/status`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...vorgang, status }),
+        body: JSON.stringify({ status: newStatus }),
       });
       loadVorgang();
     } catch (err) {
@@ -36,38 +41,23 @@ export default function VorgangDetail() {
     }
   };
 
-  useEffect(() => {
-    loadVorgang();
-  }, [id]);
+  const handleUpload = async (type: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
 
-  const statusDarstellung = (status: string) => {
-    switch (status) {
-      case 'angelegt':
-        return (
-          <span
-            className="cursor-pointer hover:text-blue-600"
-            onClick={() => updateStatus('ausfuhr_beantragt')}
-            title="Klicken, um zu 'Ausfuhr beantragt' zu wechseln"
-          >
-            📝 Angelegt
-          </span>
-        );
-      case 'ausfuhr_beantragt':
-        return (
-          <span
-            className="cursor-pointer hover:text-blue-600"
-            onClick={() => updateStatus('angelegt')}
-            title="Klicken, um zurück zu 'Angelegt' zu wechseln"
-          >
-            🚛 Ausfuhr beantragt
-          </span>
-        );
-      case 'abd_erhalten':
-        return <>📄 ABD erhalten</>;
-      case 'agv_vorliegend':
-        return <>✅ AGV liegt vor</>;
-      default:
-        return <>❓ Unbekannt</>;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}/upload/${type}`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.ok) {
+        loadVorgang();
+        alert(`${type.toUpperCase()} erfolgreich hochgeladen`);
+      } else {
+        alert('Fehler beim Hochladen');
+      }
+    } catch (err) {
+      console.error('Upload Fehler:', err);
     }
   };
 
@@ -92,27 +82,46 @@ export default function VorgangDetail() {
         <div><strong>Zielland:</strong> {vorgang.land}</div>
         <div><strong>MRN:</strong> {vorgang.mrn}</div>
         <div><strong>Erstellt am:</strong> {new Date(vorgang.erstelldatum).toLocaleDateString()}</div>
-        <div><strong>Status:</strong> {statusDarstellung(vorgang.status)}</div>
+        <div>
+          <strong>Status:</strong>{' '}
+          {['angelegt', 'ausfuhr_beantragt'].includes(vorgang.status) ? (
+            <span
+              className="cursor-pointer hover:text-blue-600"
+              onClick={toggleStatus}
+              title="Klicken, um Status zu wechseln"
+            >
+              {vorgang.status === 'angelegt' ? '🫨 Angelegt' : '🤞🏻 Ausfuhr beantragt'}
+            </span>
+          ) : (
+            <span>
+              {vorgang.status === 'abd_erhalten' && '🥳 ABD erhalten'}
+              {vorgang.status === 'agv_vorliegend' && '✅ AGV liegt vor'}
+            </span>
+          )}
+        </div>
       </div>
 
       <h2 className="text-xl font-bold mt-6 mb-2">Dokumente</h2>
-      <div className="flex gap-4 text-xl">
-        <a href="#" title="PDF herunterladen">📥</a>
-        <a href="#" title="Rechnung herunterladen">📥</a>
-        {vorgang.status === 'agv_vorliegend' ? (
-          <a href="#" title="AGV herunterladen">📥</a>
-        ) : (
-          <a href="#" title="ABD herunterladen">📥</a>
-        )}
+      <div className="flex gap-4 text-xl items-center">
+        {vorgang.hasPdf && <a href={`${API_BASE_URL}/uploads/${vorgang.id}/pdf.pdf`} target="_blank" title="PDF herunterladen">📄</a>}
+        {vorgang.hasInvoice && <a href={`${API_BASE_URL}/uploads/${vorgang.id}/rechnung.pdf`} target="_blank" title="Rechnung herunterladen">📄</a>}
+        {vorgang.hasAbd && <a href={`${API_BASE_URL}/uploads/${vorgang.id}/abd.pdf`} target="_blank" title="ABD herunterladen">📄</a>}
+        {vorgang.hasAgv && <a href={`${API_BASE_URL}/uploads/${vorgang.id}/agv.pdf`} target="_blank" title="AGV herunterladen">📄</a>}
+      </div>
+
+      <h2 className="text-xl font-bold mt-6 mb-2">Dokument hochladen</h2>
+      <div className="space-y-2">
+        <input type="file" onChange={(e) => e.target.files && handleUpload('rechnung', e.target.files[0])} title="Rechnung hochladen" />
+        <input type="file" onChange={(e) => e.target.files && handleUpload('abd', e.target.files[0])} title="ABD hochladen" />
+        <input type="file" onChange={(e) => e.target.files && handleUpload('agv', e.target.files[0])} title="AGV hochladen" />
       </div>
 
       <div className="flex gap-4 mt-8">
         <button
-          onClick={() => alert('Bearbeiten (Demo)')}
-          className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded"
-          title="Bearbeiten"
+          onClick={() => navigate('/verwaltung')}
+          className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
         >
-          ✏️ Bearbeiten
+          Zurück
         </button>
         <button
           onClick={handleDelete}

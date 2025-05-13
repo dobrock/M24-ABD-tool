@@ -1,26 +1,34 @@
 #!/bin/bash
 
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+# API und Frontend URLs anpassen (Render + Vercel)
+API_URL="https://m24-abd-tool.onrender.com/api/vorgaenge"
+FRONTEND_BASE="https://m24-abd-tool.vercel.app"
 
-echo -e "${GREEN}=== API TEST: Render Backend ===${NC}"
-API_RESPONSE=$(curl -s https://m24-abd-tool.onrender.com/api/vorgaenge)
-if [[ $API_RESPONSE == *"["* ]]; then
-    echo -e "${GREEN}✅ API OK:${NC}"
-    echo "$API_RESPONSE" | jq .
+echo "=== API TEST: Render Backend ==="
+response=$(curl -s -o /dev/null -w "%{http_code}" $API_URL)
+if [ "$response" -eq 200 ]; then
+  echo "✅ API erreichbar (Status $response)"
+  count=$(curl -s $API_URL | jq length)
+  if [ "$count" -gt 0 ]; then
+    echo "✅ API liefert Daten: $count Vorgang/Vorgänge"
+  else
+    echo "⚠️  API erreichbar, aber keine Daten"
+  fi
 else
-    echo -e "${RED}❌ API Fehler${NC}"
-    echo "$API_RESPONSE"
+  echo "❌ API Fehler (Status $response)"
 fi
 
-echo -e "\n${GREEN}=== Frontend TEST: Startseite ===${NC}"
-curl -s -o /dev/null -w "%{http_code}\n" https://m24-abd-tool.vercel.app/ | grep 200 && echo -e "${GREEN}✅ OK${NC}" || echo -e "${RED}❌ Fehler${NC}"
+echo ""
+echo "=== Frontend TEST: Startseite ==="
+curl -s -o /dev/null -w "%{http_code}\n" $FRONTEND_BASE | grep 200 && echo "✅ OK" || echo "❌ FEHLER"
 
-echo -e "\n${GREEN}=== Frontend TEST: /vorgaenge ===${NC}"
-curl -s -o /dev/null -w "%{http_code}\n" https://m24-abd-tool.vercel.app/vorgaenge | grep 200 && echo -e "${GREEN}✅ OK${NC}" || echo -e "${RED}❌ Fehler${NC}"
+echo ""
+echo "=== Frontend TEST: /vorgaenge ==="
+curl -s -o /dev/null -w "%{http_code}\n" $FRONTEND_BASE/vorgaenge | grep 200 && echo "✅ OK" || echo "❌ FEHLER"
 
-echo -e "\n${GREEN}=== Frontend TEST: /verwaltung ===${NC}"
-curl -s -o /dev/null -w "%{http_code}\n" https://m24-abd-tool.vercel.app/verwaltung | grep 200 && echo -e "${GREEN}✅ OK${NC}" || echo -e "${RED}❌ Fehler${NC}"
+echo ""
+echo "=== Frontend TEST: /verwaltung ==="
+curl -s -o /dev/null -w "%{http_code}\n" $FRONTEND_BASE/verwaltung | grep 200 && echo "✅ OK" || echo "❌ FEHLER"
 
-echo -e "${GREEN}=== Test abgeschlossen ===${NC}"
+echo ""
+echo "=== Test abgeschlossen ==="
