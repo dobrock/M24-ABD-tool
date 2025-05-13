@@ -10,6 +10,10 @@ interface Vorgang {
   mrn: string;
   erstelldatum: string;
   status: string;
+  hasPdf?: boolean;
+  hasInvoice?: boolean;
+  hasAbd?: boolean;
+  hasAgv?: boolean;
 }
 
 export default function VorgangsListe() {
@@ -31,7 +35,7 @@ export default function VorgangsListe() {
   }, []);
 
   const toggleStatus = async (vorgang: Vorgang) => {
-    let newStatus = vorgang.status === 'angelegt' ? 'ausfuhr_beantragt' : 'angelegt';
+    const newStatus = vorgang.status === 'angelegt' ? 'ausfuhr_beantragt' : 'angelegt';
     try {
       await fetch(`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/status`, {
         method: 'PATCH',
@@ -77,13 +81,13 @@ export default function VorgangsListe() {
         <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
           <thead className="bg-gray-200">
             <tr>
-              <th className="px-4 py-2 text-left">Empfänger</th>
-              <th className="px-4 py-2 text-left">Zielland</th>
-              <th className="px-2 py-2 text-left w-48">MRN</th>
-              <th className="px-4 py-2 text-left">Erstellt am</th>
-              <th className="px-4 py-2 text-left">Status</th>
-              <th className="px-4 py-2 text-left">Dokumente</th>
-              <th className="px-4 py-2 text-right">Aktion</th>
+              <th className="px-4 py-2 w-48 text-left">Empfänger</th>
+              <th className="px-4 py-2 w-32 text-left">Zielland</th>
+              <th className="px-4 py-2 w-40 text-left">MRN</th>
+              <th className="px-4 py-2 w-32 text-left">Erstellt am</th>
+              <th className="px-4 py-2 w-48 text-left">Status</th>
+              <th className="px-4 py-2 w-32 text-center">Dokumente</th>
+              <th className="px-4 py-2 w-32 text-center">Aktion</th>
             </tr>
           </thead>
           <tbody>
@@ -106,19 +110,15 @@ export default function VorgangsListe() {
                     <span>{statusIcons[vorgang.status]} {statusLabels[vorgang.status]}</span>
                   )}
                 </td>
-                <td className="px-4 py-2 text-xl whitespace-nowrap">
-  {vorgang.hasPdf && (
-    <a href="#" title="PDF herunterladen" className="mr-2">📄</a>
-  )}
-  {vorgang.hasInvoice && (
-    <a href="#" title="Rechnung herunterladen" className="mr-2">📄</a>
-  )}
-  {vorgang.hasAgv ? (
-    <a href="#" title="AGV herunterladen">📄</a>
-  ) : vorgang.hasAbd ? (
-    <a href="#" title="ABD herunterladen">📄</a>
-  ) : null}
-</td>
+                <td className="px-4 py-2 text-xl whitespace-nowrap text-center">
+                  {vorgang.hasPdf && <a href="#" title="PDF herunterladen" className="mr-2">📄</a>}
+                  {vorgang.hasInvoice && <a href="#" title="Rechnung herunterladen" className="mr-2">📄</a>}
+                  {vorgang.hasAgv ? (
+                    <a href="#" title="AGV herunterladen">📄</a>
+                  ) : vorgang.hasAbd ? (
+                    <a href="#" title="ABD herunterladen">📄</a>
+                  ) : null}
+                </td>
                 <td className="px-4 py-2 flex gap-2 justify-end">
                   <button
                     onClick={() => navigate(`/vorgaenge/${vorgang.id}`)}
