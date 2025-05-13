@@ -13,7 +13,7 @@ app.use(express.json());
 // SQLite initialisieren
 const db = new sqlite3.Database('./vorgaenge.db');
 
-// Tabelle anlegen inkl. Felder
+// Tabelle anlegen (inkl. Felder für Vorgang)
 db.run(`
   CREATE TABLE IF NOT EXISTS vorgaenge (
     id TEXT PRIMARY KEY,
@@ -26,7 +26,7 @@ db.run(`
   )
 `);
 
-// Upload Setup (Multer)
+// Upload-Konfiguration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = `./uploads/${req.params.id}`;
@@ -44,18 +44,16 @@ app.post('/api/vorgang', (req, res) => {
   const id = uuidv4();
   const { empfaenger, land, mrn, notizen } = req.body;
   const datum = new Date().toISOString();
-  db.run(
-    `INSERT INTO vorgaenge (id, erstelldatum, empfaenger, land, mrn, status, notizen)
-     VALUES (?, ?, ?, ?, ?, 'angelegt', ?)`,
+  db.run(`INSERT INTO vorgaenge (id, erstelldatum, empfaenger, land, mrn, status, notizen)
+    VALUES (?, ?, ?, ?, ?, 'angelegt', ?)`,
     [id, datum, empfaenger, land, mrn, notizen || ''],
     (err) => {
       if (err) return res.status(500).send(err);
       res.json({ success: true, id });
-    }
-  );
+    });
 });
 
-// Vorgänge abrufen mit Dokumentstatus
+// Alle Vorgänge mit Dokumentenstatus anzeigen
 app.get('/api/vorgaenge', (req, res) => {
   db.all(`SELECT * FROM vorgaenge ORDER BY erstelldatum DESC`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -70,7 +68,7 @@ app.get('/api/vorgaenge', (req, res) => {
   });
 });
 
-// Vorgang Detail
+// Einzelnen Vorgang anzeigen mit Dokumentstatus
 app.get('/api/vorgang/:id', (req, res) => {
   db.get(`SELECT * FROM vorgaenge WHERE id = ?`, [req.params.id], (err, row) => {
     if (err) return res.status(500).send(err);
@@ -85,7 +83,7 @@ app.get('/api/vorgang/:id', (req, res) => {
   });
 });
 
-// Vorgang löschen
+// Vorgang löschen inkl. Dateien
 app.delete('/api/vorgaenge/:id', (req, res) => {
   db.run('DELETE FROM vorgaenge WHERE id = ?', [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
@@ -94,7 +92,7 @@ app.delete('/api/vorgaenge/:id', (req, res) => {
   });
 });
 
-// Status ändern
+// Status aktualisieren
 app.patch('/api/vorgaenge/:id/status', (req, res) => {
   const { status } = req.body;
   const allowedStatuses = ['angelegt', 'ausfuhr_beantragt', 'abd_erhalten', 'agv_vorliegend'];
@@ -106,7 +104,7 @@ app.patch('/api/vorgaenge/:id/status', (req, res) => {
   });
 });
 
-// Upload Dateien & Status setzen (ABD & AGV)
+// Datei Upload (setzt Status bei ABD/AGV)
 app.post('/api/vorgaenge/:id/upload/:type', upload.single('file'), (req, res) => {
   const { type } = req.params;
   const allowedTypes = ['pdf', 'rechnung', 'abd', 'agv'];
@@ -123,6 +121,16 @@ app.post('/api/vorgaenge/:id/upload/:type', upload.single('file'), (req, res) =>
     });
   } else {
     res.json({ message: `${type.toUpperCase()} hochgeladen` });
+  }
+});
+
+// Datei Download
+app.get('/api/vorgaenge/:id/download/:type', (req, res) => {
+  const filePath = `./uploads/${req.params.id}/${req.params.type}.pdf`;
+  if (fs.existsSync(filePath)) {
+    res.download(filePath);
+  } else {
+    res.status(404).send('Datei nicht gefunden');
   }
 });
 
