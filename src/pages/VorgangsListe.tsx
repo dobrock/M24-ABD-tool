@@ -87,7 +87,7 @@ export default function VorgangsListe() {
               <th className="w-32 text-left px-4 py-2">Erstellt am</th>
               <th className="w-48 text-left px-4 py-2">Status</th>
               <th className="w-40 text-center px-4 py-2">Dokumente</th>
-              <th className="w-32 text-center px-4 py-2">Aktion</th>
+              <th className="w-32 text-right px-4 py-2">Aktion</th>
             </tr>
           </thead>
           <tbody>
