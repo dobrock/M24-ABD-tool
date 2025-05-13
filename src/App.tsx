@@ -13,7 +13,6 @@ export default function App() {
         <Link to="/">Neue Ausfuhranmeldung</Link>
         <Link to="/vorgaenge">Vorgänge verwalten</Link>
         <Link to="/vorgang-neu">Neuer Vorgang</Link>
-        <Link to="/verwaltung">Verwaltung (Test)</Link>
       </nav>
       <Routes>
         <Route path="/" element={<ExportForm />} />
