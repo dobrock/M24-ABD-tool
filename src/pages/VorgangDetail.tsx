@@ -23,6 +23,19 @@ export default function VorgangDetail() {
     }
   };
 
+  const updateStatus = async (status: string) => {
+    try {
+      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...vorgang, status }),
+      });
+      loadVorgang();
+    } catch (err) {
+      console.error('Fehler beim Statuswechsel:', err);
+    }
+  };
+
   useEffect(() => {
     loadVorgang();
   }, [id]);
@@ -39,6 +52,40 @@ export default function VorgangDetail() {
         return <>✅ AGV liegt vor</>;
       default:
         return <>❓ Unbekannt</>;
+    }
+  };
+
+  const nächsteStatusAktion = (status: string) => {
+    switch (status) {
+      case 'angelegt':
+        return (
+          <button
+            onClick={() => updateStatus('ausfuhr_beantragt')}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            ➡️ Ausfuhr beantragt
+          </button>
+        );
+      case 'ausfuhr_beantragt':
+        return (
+          <button
+            onClick={() => updateStatus('abd_erhalten')}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            ➡️ ABD erhalten
+          </button>
+        );
+      case 'abd_erhalten':
+        return (
+          <button
+            onClick={() => updateStatus('agv_vorliegend')}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            ➡️ AGV liegt vor
+          </button>
+        );
+      default:
+        return null;
     }
   };
 
@@ -64,6 +111,7 @@ export default function VorgangDetail() {
         <div><strong>MRN:</strong> {vorgang.mrn}</div>
         <div><strong>Erstellt am:</strong> {new Date(vorgang.erstelldatum).toLocaleDateString()}</div>
         <div><strong>Status:</strong> {statusDarstellung(vorgang.status)}</div>
+        <div>{nächsteStatusAktion(vorgang.status)}</div>
       </div>
 
       <h2 className="text-xl font-bold mt-6 mb-2">Dokumente</h2>
