@@ -40,7 +40,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Vorgang anlegen
-app.post('/api/vorgang', (req, res) => {
+app.post('/api/vorgaenge', (req, res) => {
   const id = uuidv4();
   const { empfaenger, land, mrn, notizen } = req.body;
   const datum = new Date().toISOString();
@@ -69,7 +69,7 @@ app.get('/api/vorgaenge', (req, res) => {
 });
 
 // Einzelnen Vorgang anzeigen mit Dokumentstatus
-app.get('/api/vorgang/:id', (req, res) => {
+app.get('/api/vorgaenge/:id', (req, res) => {
   db.get(`SELECT * FROM vorgaenge WHERE id = ?`, [req.params.id], (err, row) => {
     if (err) return res.status(500).send(err);
     if (!row) return res.status(404).send('Nicht gefunden');
