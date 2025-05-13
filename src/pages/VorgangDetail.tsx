@@ -1,60 +1,98 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-interface Vorgang {
-  id: string;
-  erstelldatum: string;
-  kundename: string;
-  mrn: string;
-  empfaenger: string;
-  land: string;
-  waren: string;
-  status: string;
-  notizen: string;
-}
-
 export default function VorgangDetail() {
-  const { id } = useParams<{ id: string }>();
-  const [vorgang, setVorgang] = useState<Vorgang | null>(null);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [vorgang, setVorgang] = useState<any>(null);
+
+  const loadVorgang = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/vorgang/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setVorgang(data);
+      } else {
+        alert('Vorgang nicht gefunden');
+        navigate('/verwaltung');
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden:', err);
+    }
+  };
 
   useEffect(() => {
-    const loadVorgang = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/vorgang/${id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setVorgang(data);
-        } else {
-          console.error('Vorgang nicht gefunden');
-        }
-      } catch (err) {
-        console.error('Fehler beim Laden:', err);
-      }
-    };
     loadVorgang();
   }, [id]);
+
+  const statusDarstellung = (status: string) => {
+    switch (status) {
+      case 'angelegt':
+        return <>📝 Angelegt</>;
+      case 'ausfuhr_beantragt':
+        return <>🚛 Ausfuhr beantragt</>;
+      case 'abd_erhalten':
+        return <>📄 ABD erhalten</>;
+      case 'agv_vorliegend':
+        return <>✅ AGV liegt vor</>;
+      default:
+        return <>❓ Unbekannt</>;
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Diesen Vorgang wirklich löschen?')) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, { method: 'DELETE' });
+      navigate('/verwaltung');
+    } catch (err) {
+      console.error('Fehler beim Löschen:', err);
+    }
+  };
 
   if (!vorgang) return <p>Vorgang wird geladen...</p>;
 
   return (
-    <div className="p-8">
-      <h1 className="text-xl font-bold mb-4">Vorgangsdetails</h1>
-      <div className="bg-white shadow p-4 rounded space-y-2">
-        <p><strong>ID:</strong> {vorgang.id}</p>
-        <p><strong>Erstelldatum:</strong> {new Date(vorgang.erstelldatum).toLocaleDateString()}</p>
-        <p><strong>Kundename:</strong> {vorgang.kundename}</p>
-        <p><strong>MRN:</strong> {vorgang.mrn}</p>
-        <p><strong>Status:</strong> <span className="font-semibold">{vorgang.status}</span></p>
-        <p><strong>Empfänger:</strong> {vorgang.empfaenger}</p>
-        <p><strong>Land:</strong> {vorgang.land}</p>
-        <p><strong>Waren:</strong> {vorgang.waren}</p>
-        <p><strong>Notizen:</strong> {vorgang.notizen}</p>
+    <div className="p-8 max-w-2xl mx-auto bg-white shadow-md rounded-lg">
+      <h1 className="text-2xl font-bold mb-4">Details Vorgang</h1>
+
+      <div className="space-y-4">
+        <div><strong>Empfänger:</strong> {vorgang.empfaenger}</div>
+        <div><strong>Zielland:</strong> {vorgang.land}</div>
+        <div><strong>MRN:</strong> {vorgang.mrn}</div>
+        <div><strong>Erstellt am:</strong> {new Date(vorgang.erstelldatum).toLocaleDateString()}</div>
+        <div><strong>Status:</strong> {statusDarstellung(vorgang.status)}</div>
       </div>
-      <Link to="/verwaltung" className="mt-4 inline-block bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
-        Zurück zur Verwaltung
-      </Link>
+
+      <h2 className="text-xl font-bold mt-6 mb-2">Dokumente</h2>
+      <div className="flex gap-4 text-xl">
+        <a href="#" title="PDF herunterladen">📥</a>
+        <a href="#" title="Rechnung herunterladen">📥</a>
+        {vorgang.status === 'agv_vorliegend' ? (
+          <a href="#" title="AGV herunterladen">📥</a>
+        ) : (
+          <a href="#" title="ABD herunterladen">📥</a>
+        )}
+      </div>
+
+      <div className="flex gap-4 mt-8">
+        <button
+          onClick={() => alert('Bearbeiten (Demo)')}
+          className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded"
+          title="Bearbeiten"
+        >
+          ✏️ Bearbeiten
+        </button>
+        <button
+          onClick={handleDelete}
+          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+          title="Löschen"
+        >
+          ❌ Löschen
+        </button>
+      </div>
     </div>
   );
 }
