@@ -74,7 +74,7 @@ export default function VorgangsListe() {
 
   return (
     <div className="p-8">
-      <h1 className="text-xl font-bold mb-4">Vorgänge</h1>
+      <h1 className="text-xl font-bold mb-4">Vorgangsübersicht</h1>
       {vorgaenge.length === 0 ? (
         <p>Keine Vorgänge vorhanden.</p>
       ) : (
