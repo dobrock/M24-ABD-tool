@@ -1,2 +1,9 @@
-node_modules/
-package-lock.json
+# Node.js Abhängigkeiten
+**/node_modules/
+**/package-lock.json
+
+# SQLite Datenbanken
+**/*.db
+
+# Logs
+*.log
