@@ -149,22 +149,23 @@ export default function VorgangsListe() {
     </a>
   ) : null}
 </td>
-<td className="px-4 py-2 text-right">
-  <button
-    onClick={() => navigate(`/vorgaenge/${vorgang.id}`)}
-    title="Bearbeiten"
-    style={{ fontSize: '75%' }}
-  >
-    ✏️
-  </button>
-  <button
-    onClick={() => handleDelete(vorgang.id)}
-    title="Löschen"
-    style={{ fontSize: '75%' }}
-    className="ml-2"
-  >
-    ❌
-  </button>
+<td className="px-4 py-2">
+  <div className="flex justify-end items-center space-x-2">
+    <button
+      onClick={() => navigate(`/vorgaenge/${vorgang.id}`)}
+      title="Bearbeiten"
+      style={{ fontSize: '75%' }}
+    >
+      ✏️
+    </button>
+    <button
+      onClick={() => handleDelete(vorgang.id)}
+      title="Löschen"
+      style={{ fontSize: '75%' }}
+    >
+      ❌
+    </button>
+  </div>
 </td>
               </tr>
             ))}
