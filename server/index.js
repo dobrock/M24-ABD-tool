@@ -134,5 +134,18 @@ app.get('/api/vorgaenge/:id/download/:type', (req, res) => {
   }
 });
 
+// Upload Rechnung
+app.post('/api/vorgaenge/:id/upload/rechnung', upload.single('file'), (req, res) => {
+  const id = req.params.id;
+  const vorgang = vorgaenge[id];
+  if (!vorgang) {
+    return res.status(404).send('Vorgang nicht gefunden');
+  }
+  const filePath = path.join(uploadDir, id, 'rechnung.pdf');
+  saveUploadedFile(req, filePath);
+  vorgang.hasInvoice = true;  // ✅ Status nach Upload setzen
+  res.json({ message: 'Rechnung hochgeladen' });
+});
+
 const port = 3001;
 app.listen(port, () => console.log(`✅ API läuft unter http://localhost:${port}`));
