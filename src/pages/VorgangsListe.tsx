@@ -65,6 +65,19 @@ export default function VorgangsListe() {
     }
   };
 
+  const handleQuickStatus = async (id: string, newStatus: string) => {
+    try {
+      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      loadVorgaenge();
+    } catch (err) {
+      console.error('Fehler beim Status-Update:', err);
+    }
+  };
+
   return (
     <div className="p-8">
       <h1 className="text-xl font-bold mb-4">Vorgänge (Bearbeiten / Löschen / Status)</h1>
@@ -107,50 +120,33 @@ export default function VorgangsListe() {
                     vorgang.mrn
                   )}
                 </td>
-                <td className="px-4 py-2">
-                  {editingId === vorgang.id ? (
-                    <select
-                      value={editData.status}
-                      onChange={(e) => setEditData({ ...editData, status: e.target.value })}
-                      className="border rounded px-2 py-1"
-                    >
-                      <option value="offen">offen</option>
-                      <option value="fertig">fertig</option>
-                      <option value="storniert">storniert</option>
-                    </select>
-                  ) : (
-                    vorgang.status
-                  )}
-                </td>
-                <td className="px-4 py-2 flex gap-2">
+                <td className="px-4 py-2">{vorgang.status}</td>
+                <td className="px-4 py-2 flex gap-2 flex-wrap">
                   {editingId === vorgang.id ? (
                     <>
-                      <button
-                        onClick={() => handleUpdate(vorgang.id)}
-                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
-                      >
+                      <button onClick={() => handleUpdate(vorgang.id)} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">
                         Speichern
                       </button>
-                      <button
-                        onClick={() => setEditingId(null)}
-                        className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded"
-                      >
+                      <button onClick={() => setEditingId(null)} className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded">
                         Abbrechen
                       </button>
                     </>
                   ) : (
                     <>
-                      <button
-                        onClick={() => handleEdit(vorgang)}
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
-                      >
+                      <button onClick={() => handleEdit(vorgang)} className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded">
                         Bearbeiten
                       </button>
-                      <button
-                        onClick={() => handleDelete(vorgang.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                      >
+                      <button onClick={() => handleDelete(vorgang.id)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
                         Löschen
+                      </button>
+                      <button onClick={() => handleQuickStatus(vorgang.id, 'offen')} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
+                        Offen
+                      </button>
+                      <button onClick={() => handleQuickStatus(vorgang.id, 'fertig')} className="bg-green-700 hover:bg-green-800 text-white px-3 py-1 rounded">
+                        Fertig
+                      </button>
+                      <button onClick={() => handleQuickStatus(vorgang.id, 'storniert')} className="bg-red-700 hover:bg-red-800 text-white px-3 py-1 rounded">
+                        Storniert
                       </button>
                     </>
                   )}
