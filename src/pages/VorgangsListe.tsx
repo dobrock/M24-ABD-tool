@@ -4,7 +4,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface Vorgang {
   id: string;
-  kundename: string;
+  empfaenger: string;
+  land: string;
   mrn: string;
   status: string;
   erstelldatum: string;
@@ -65,42 +66,6 @@ export default function VorgangsListe() {
     }
   };
 
-  const naechsteAktion = (vorgang: Vorgang) => {
-    switch (vorgang.status) {
-      case 'angelegt':
-        return (
-          <button
-            onClick={() => handleStatusUpdate(vorgang.id, 'ausfuhr_beantragt')}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
-          >
-            ✔ Ausfuhr beantragt
-          </button>
-        );
-      case 'ausfuhr_beantragt':
-        return (
-          <button
-            onClick={() => handleStatusUpdate(vorgang.id, 'abd_erhalten')}
-            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
-          >
-            📄 ABD erhalten (simuliert)
-          </button>
-        );
-      case 'abd_erhalten':
-        return (
-          <button
-            onClick={() => handleStatusUpdate(vorgang.id, 'agv_vorliegend')}
-            className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded"
-          >
-            ✔ AGV vorliegend
-          </button>
-        );
-      case 'agv_vorliegend':
-        return <span className="text-green-700">✅ Abgeschlossen</span>;
-      default:
-        return null;
-    }
-  };
-
   const renderDownloadIcons = (vorgang: Vorgang) => (
     <div className="flex gap-2 text-xl">
       <a href="#" title="PDF herunterladen">📥</a>
@@ -115,37 +80,45 @@ export default function VorgangsListe() {
 
   return (
     <div className="p-8">
-      <h1 className="text-xl font-bold mb-4">Vorgänge (Status & Aktionen)</h1>
+      <h1 className="text-xl font-bold mb-4 text-left">Vorgänge</h1>
       {vorgaenge.length === 0 ? (
         <p>Keine Vorgänge vorhanden.</p>
       ) : (
         <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
-          <thead className="bg-gray-200">
+          <thead className="bg-gray-200 text-left">
             <tr>
-              <th className="px-4 py-2">Kundename</th>
+              <th className="px-4 py-2">Empfänger</th>
+              <th className="px-4 py-2">Zielland</th>
               <th className="px-4 py-2">MRN</th>
               <th className="px-4 py-2">Erstellt am</th>
               <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Downloads</th>
+              <th className="px-4 py-2">Dokumente</th>
               <th className="px-4 py-2">Aktion</th>
-              <th className="px-4 py-2">Löschen</th>
             </tr>
           </thead>
           <tbody>
             {vorgaenge.map((vorgang) => (
               <tr key={vorgang.id} className="border-b">
-                <td className="px-4 py-2">{vorgang.kundename}</td>
+                <td className="px-4 py-2">{vorgang.empfaenger}</td>
+                <td className="px-4 py-2">{vorgang.land}</td>
                 <td className="px-4 py-2">{vorgang.mrn}</td>
                 <td className="px-4 py-2">{new Date(vorgang.erstelldatum).toLocaleDateString()}</td>
                 <td className="px-4 py-2">{statusDarstellung(vorgang.status)}</td>
                 <td className="px-4 py-2">{renderDownloadIcons(vorgang)}</td>
-                <td className="px-4 py-2">{naechsteAktion(vorgang)}</td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2 flex gap-2 text-xl">
+                  <button
+                    onClick={() => alert('Bearbeiten (Demo)')}
+                    title="Bearbeiten"
+                    className="text-gray-700 hover:text-gray-900"
+                  >
+                    ✏️
+                  </button>
                   <button
                     onClick={() => handleDelete(vorgang.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                    title="Löschen"
+                    className="text-red-600 hover:text-red-800"
                   >
-                    Löschen
+                    ❌
                   </button>
                 </td>
               </tr>
