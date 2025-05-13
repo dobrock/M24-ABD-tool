@@ -11,8 +11,6 @@ interface Vorgang {
 
 export default function VorgangsListe() {
   const [vorgaenge, setVorgaenge] = useState<Vorgang[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState({ kundename: '', mrn: '', status: 'offen' });
 
   const loadVorgaenge = async () => {
     try {
@@ -28,6 +26,19 @@ export default function VorgangsListe() {
     loadVorgaenge();
   }, []);
 
+  const handleStatusUpdate = async (id: string, neuerStatus: string) => {
+    try {
+      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: neuerStatus }),
+      });
+      loadVorgaenge();
+    } catch (err) {
+      console.error('Fehler beim Status-Update:', err);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!window.confirm('Diesen Vorgang wirklich löschen?')) return;
     try {
@@ -38,49 +49,60 @@ export default function VorgangsListe() {
     }
   };
 
-  const handleEdit = (vorgang: Vorgang) => {
-    setEditingId(vorgang.id);
-    setEditData({ kundename: vorgang.kundename, mrn: vorgang.mrn, status: vorgang.status });
-  };
-
-  const handleUpdate = async (id: string) => {
-    if (!editData.kundename || !editData.mrn) {
-      alert('Bitte Kundename und MRN eingeben.');
-      return;
-    }
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editData),
-      });
-      if (res.ok) {
-        setEditingId(null);
-        loadVorgaenge();
-      } else {
-        alert('Fehler beim Speichern');
-      }
-    } catch (err) {
-      console.error('Fehler beim Speichern:', err);
+  const statusDarstellung = (status: string) => {
+    switch (status) {
+      case 'angelegt':
+        return <>📝 <span>Angelegt</span></>;
+      case 'ausfuhr_beantragt':
+        return <>🚛 <span>Ausfuhr beantragt</span></>;
+      case 'abd_erhalten':
+        return <>📄 <span>ABD erhalten</span></>;
+      case 'agv_vorliegend':
+        return <>✅ <span>AGV liegt vor</span></>;
+      default:
+        return <>❓ <span>Unbekannt</span></>;
     }
   };
 
-  const handleStatusQuickUpdate = async (id: string, status: string) => {
-    try {
-      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      loadVorgaenge();
-    } catch (err) {
-      console.error('Fehler beim Status-Update:', err);
+  const naechsteAktion = (vorgang: Vorgang) => {
+    switch (vorgang.status) {
+      case 'angelegt':
+        return (
+          <button
+            onClick={() => handleStatusUpdate(vorgang.id, 'ausfuhr_beantragt')}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+          >
+            ✔ Ausfuhr beantragt
+          </button>
+        );
+      case 'ausfuhr_beantragt':
+        return (
+          <button
+            onClick={() => handleStatusUpdate(vorgang.id, 'abd_erhalten')}
+            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+          >
+            📄 ABD hochladen (simuliert)
+          </button>
+        );
+      case 'abd_erhalten':
+        return (
+          <button
+            onClick={() => handleStatusUpdate(vorgang.id, 'agv_vorliegend')}
+            className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded"
+          >
+            ✔ AGV vorliegend
+          </button>
+        );
+      case 'agv_vorliegend':
+        return <span className="text-green-700">✅ Vorgang abgeschlossen</span>;
+      default:
+        return null;
     }
   };
 
   return (
     <div className="p-8">
-      <h1 className="text-xl font-bold mb-4">Vorgänge (Bearbeiten / Löschen / Status)</h1>
+      <h1 className="text-xl font-bold mb-4">Vorgänge (Status & Aktionen)</h1>
       {vorgaenge.length === 0 ? (
         <p>Keine Vorgänge vorhanden.</p>
       ) : (
@@ -90,91 +112,24 @@ export default function VorgangsListe() {
               <th className="px-4 py-2">Kundename</th>
               <th className="px-4 py-2">MRN</th>
               <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Aktionen</th>
+              <th className="px-4 py-2">Aktion</th>
+              <th className="px-4 py-2">Löschen</th>
             </tr>
           </thead>
           <tbody>
             {vorgaenge.map((vorgang) => (
               <tr key={vorgang.id} className="border-b">
+                <td className="px-4 py-2">{vorgang.kundename}</td>
+                <td className="px-4 py-2">{vorgang.mrn}</td>
+                <td className="px-4 py-2">{statusDarstellung(vorgang.status)}</td>
+                <td className="px-4 py-2">{naechsteAktion(vorgang)}</td>
                 <td className="px-4 py-2">
-                  {editingId === vorgang.id ? (
-                    <input
-                      type="text"
-                      value={editData.kundename}
-                      onChange={(e) => setEditData({ ...editData, kundename: e.target.value })}
-                      className="border rounded px-2 py-1"
-                    />
-                  ) : (
-                    vorgang.kundename
-                  )}
-                </td>
-                <td className="px-4 py-2">
-                  {editingId === vorgang.id ? (
-                    <input
-                      type="text"
-                      value={editData.mrn}
-                      onChange={(e) => setEditData({ ...editData, mrn: e.target.value })}
-                      className="border rounded px-2 py-1"
-                    />
-                  ) : (
-                    vorgang.mrn
-                  )}
-                </td>
-                <td className="px-4 py-2">{vorgang.status}</td>
-                <td className="px-4 py-2 flex flex-col gap-2">
-                  {editingId === vorgang.id ? (
-                    <>
-                      <button
-                        onClick={() => handleUpdate(vorgang.id)}
-                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
-                      >
-                        Speichern
-                      </button>
-                      <button
-                        onClick={() => setEditingId(null)}
-                        className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded"
-                      >
-                        Abbrechen
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex gap-1 mb-1">
-                        <button
-                          onClick={() => handleEdit(vorgang)}
-                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
-                        >
-                          Bearbeiten
-                        </button>
-                        <button
-                          onClick={() => handleDelete(vorgang.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                        >
-                          Löschen
-                        </button>
-                      </div>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => handleStatusQuickUpdate(vorgang.id, 'offen')}
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                        >
-                          Offen
-                        </button>
-                        <button
-                          onClick={() => handleStatusQuickUpdate(vorgang.id, 'fertig')}
-                          className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs"
-                        >
-                          Fertig
-                        </button>
-                        <button
-                          onClick={() => handleStatusQuickUpdate(vorgang.id, 'storniert')}
-                          className="bg-gray-700 hover:bg-gray-800 text-white px-2 py-1 rounded text-xs"
-                        >
-                          Storniert
-                        </button>
-                      </div>
-                    </>
-                  )}
+                  <button
+                    onClick={() => handleDelete(vorgang.id)}
+                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                  >
+                    Löschen
+                  </button>
                 </td>
               </tr>
             ))}
