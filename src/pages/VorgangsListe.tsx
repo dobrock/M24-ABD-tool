@@ -1,32 +1,26 @@
 import React, { useEffect, useState } from 'react';
 
-// Umgebungsvariable für API URL (local fallback)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-// Typisierung des Vorgangs
 interface Vorgang {
   id: string;
   kundename: string;
   mrn: string;
+  status: string;
 }
 
 export default function VorgangsListe() {
   const [vorgaenge, setVorgaenge] = useState<Vorgang[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState({ kundename: '', mrn: '' });
-  const [error, setError] = useState<string | null>(null);
+  const [editData, setEditData] = useState({ kundename: '', mrn: '', status: 'offen' });
 
-  // Vorgänge laden
   const loadVorgaenge = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/vorgaenge`);
-      if (!res.ok) throw new Error('Fehler beim Laden der Vorgänge');
       const data = await res.json();
       setVorgaenge(data);
-      setError(null);
     } catch (err) {
       console.error('Fehler beim Laden:', err);
-      setError('Fehler beim Laden der Vorgänge');
     }
   };
 
@@ -34,26 +28,21 @@ export default function VorgangsListe() {
     loadVorgaenge();
   }, []);
 
-  // Vorgang löschen
   const handleDelete = async (id: string) => {
     if (!window.confirm('Diesen Vorgang wirklich löschen?')) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Fehler beim Löschen');
+      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, { method: 'DELETE' });
       loadVorgaenge();
     } catch (err) {
       console.error('Fehler beim Löschen:', err);
-      setError('Fehler beim Löschen des Vorgangs');
     }
   };
 
-  // Vorgang bearbeiten
   const handleEdit = (vorgang: Vorgang) => {
     setEditingId(vorgang.id);
-    setEditData({ kundename: vorgang.kundename, mrn: vorgang.mrn });
+    setEditData({ kundename: vorgang.kundename, mrn: vorgang.mrn, status: vorgang.status });
   };
 
-  // Vorgang aktualisieren
   const handleUpdate = async (id: string) => {
     if (!editData.kundename || !editData.mrn) {
       alert('Bitte Kundename und MRN eingeben.');
@@ -73,14 +62,12 @@ export default function VorgangsListe() {
       }
     } catch (err) {
       console.error('Fehler beim Speichern:', err);
-      setError('Fehler beim Aktualisieren des Vorgangs');
     }
   };
 
   return (
     <div className="p-8">
-      <h1 className="text-xl font-bold mb-4">Vorgänge (Bearbeiten / Löschen)</h1>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
+      <h1 className="text-xl font-bold mb-4">Vorgänge (Bearbeiten / Löschen / Status)</h1>
       {vorgaenge.length === 0 ? (
         <p>Keine Vorgänge vorhanden.</p>
       ) : (
@@ -89,6 +76,7 @@ export default function VorgangsListe() {
             <tr>
               <th className="px-4 py-2">Kundename</th>
               <th className="px-4 py-2">MRN</th>
+              <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Aktionen</th>
             </tr>
           </thead>
@@ -117,6 +105,21 @@ export default function VorgangsListe() {
                     />
                   ) : (
                     vorgang.mrn
+                  )}
+                </td>
+                <td className="px-4 py-2">
+                  {editingId === vorgang.id ? (
+                    <select
+                      value={editData.status}
+                      onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+                      className="border rounded px-2 py-1"
+                    >
+                      <option value="offen">offen</option>
+                      <option value="fertig">fertig</option>
+                      <option value="storniert">storniert</option>
+                    </select>
+                  ) : (
+                    vorgang.status
                   )}
                 </td>
                 <td className="px-4 py-2 flex gap-2">

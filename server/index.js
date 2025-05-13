@@ -96,5 +96,25 @@ app.put('/api/vorgaenge/:id', (req, res) => {
   );
 });
 
+// Update: Kundename, MRN, Status
+app.put('/api/vorgaenge/:id', (req, res) => {
+  const { id } = req.params;
+  const { kundename, mrn, status } = req.body;
+  if (!kundename || !mrn) {
+    return res.status(400).json({ error: 'Kundename und MRN erforderlich' });
+  }
+  db.run(
+    'UPDATE vorgaenge SET kundename = ?, mrn = ?, status = ? WHERE id = ?',
+    [kundename, mrn, status, id],
+    function (err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+      } else {
+        res.json({ message: 'Vorgang aktualisiert' });
+      }
+    }
+  );
+});
+
 const port = 3001;
 app.listen(port, () => console.log(`Server läuft unter http://localhost:${port}`));
