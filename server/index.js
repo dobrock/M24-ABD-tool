@@ -2,145 +2,71 @@ const express = require('express');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const sqlite3 = require('sqlite3').verbose();
-const fs = require('fs');
-const multer = require('multer');
-const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const db = new sqlite3.Database('./vorgaenge.db');
+// SQLite Datenbank initialisieren
+const db = new sqlite3.Database('./vorgaenge.db', (err) => {
+  if (err) {
+    console.error('❌ Fehler beim Öffnen der SQLite-Datenbank:', err);
+    process.exit(1);
+  } else {
+    console.log('✅ SQLite-Datenbank erfolgreich verbunden.');
+  }
+});
 
-// Tabelle anlegen
+// Tabelle anlegen (falls noch nicht existiert)
 db.run(`
   CREATE TABLE IF NOT EXISTS vorgaenge (
     id TEXT PRIMARY KEY,
     erstelldatum TEXT,
+    mrn TEXT,
     empfaenger TEXT,
     land TEXT,
-    mrn TEXT,
-    status TEXT DEFAULT 'angelegt',
+    waren TEXT,
+    status TEXT,
     notizen TEXT
   )
 `);
 
-// Upload-Konfiguration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = `./uploads/${req.params.id}`;
-    fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${req.params.type}.pdf`);
-  },
-});
-const upload = multer({ storage });
-
 // Vorgang anlegen
-app.post('/api/vorgaenge', (req, res) => {
+app.post('/api/vorgang', (req, res) => {
   const id = uuidv4();
-  const { empfaenger, land, mrn, notizen } = req.body || {};
-  if (!empfaenger || !land || !mrn) {
-    return res.status(400).json({ error: 'Fehlende Pflichtfelder (empfaenger, land, mrn)' });
-  }
+  const { mrn, empfaenger, land, waren, status, notizen } = req.body;
   const datum = new Date().toISOString();
-  db.run(
-    `INSERT INTO vorgaenge (id, erstelldatum, empfaenger, land, mrn, status, notizen)
-     VALUES (?, ?, ?, ?, ?, 'angelegt', ?)`,
-    [id, datum, empfaenger, land, mrn, notizen || ''],
+  db.run(`INSERT INTO vorgaenge (id, erstelldatum, mrn, empfaenger, land, waren, status, notizen)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, datum, mrn, empfaenger, land, waren, status || 'offen', notizen || ''],
     (err) => {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) return res.status(500).send(err.message);
       res.json({ success: true, id });
-    }
-  );
+    });
 });
 
-// Alle Vorgänge
+// Vorgänge anzeigen
 app.get('/api/vorgaenge', (req, res) => {
   db.all(`SELECT * FROM vorgaenge ORDER BY erstelldatum DESC`, [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    const result = rows.map((v) => ({
-      ...v,
-      hasPdf: fs.existsSync(`./uploads/${v.id}/pdf.pdf`),
-      hasInvoice: fs.existsSync(`./uploads/${v.id}/rechnung.pdf`),
-      hasAbd: fs.existsSync(`./uploads/${v.id}/abd.pdf`),
-      hasAgv: fs.existsSync(`./uploads/${v.id}/agv.pdf`),
-    }));
-    res.json(result);
+    if (err) return res.status(500).send(err.message);
+    res.json(rows);
   });
 });
 
-// Einzelner Vorgang
-app.get('/api/vorgaenge/:id', (req, res) => {
+// Vorgang nach ID anzeigen
+app.get('/api/vorgang/:id', (req, res) => {
   db.get(`SELECT * FROM vorgaenge WHERE id = ?`, [req.params.id], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(404).json({ error: 'Vorgang nicht gefunden' });
-    res.json({
-      ...row,
-      hasPdf: fs.existsSync(`./uploads/${row.id}/pdf.pdf`),
-      hasInvoice: fs.existsSync(`./uploads/${row.id}/rechnung.pdf`),
-      hasAbd: fs.existsSync(`./uploads/${row.id}/abd.pdf`),
-      hasAgv: fs.existsSync(`./uploads/${row.id}/agv.pdf`),
-    });
+    if (err) return res.status(500).send(err.message);
+    if (!row) return res.status(404).send('Nicht gefunden');
+    res.json(row);
   });
 });
 
-// Vorgang löschen
-app.delete('/api/vorgaenge/:id', (req, res) => {
-  db.run('DELETE FROM vorgaenge WHERE id = ?', [req.params.id], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    fs.rmSync(`./uploads/${req.params.id}`, { recursive: true, force: true });
-    res.json({ message: 'Vorgang gelöscht' });
-  });
+// Fallback für alle anderen Routen
+app.use((req, res) => {
+  res.status(404).send('Route nicht gefunden');
 });
 
-// Status aktualisieren
-app.patch('/api/vorgaenge/:id/status', (req, res) => {
-  const { status } = req.body;
-  const allowedStatuses = ['angelegt', 'ausfuhr_beantragt', 'abd_erhalten', 'agv_vorliegend'];
-  if (!allowedStatuses.includes(status)) {
-    return res.status(400).json({ error: 'Ungültiger Status' });
-  }
-  db.run('UPDATE vorgaenge SET status = ? WHERE id = ?', [status, req.params.id], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    if (this.changes === 0) return res.status(404).json({ error: 'Vorgang nicht gefunden' });
-    res.json({ message: 'Status aktualisiert', status });
-  });
-});
-
-// Datei Upload
-app.post('/api/vorgaenge/:id/upload/:type', upload.single('file'), (req, res) => {
-  const { type } = req.params;
-  const allowedTypes = ['pdf', 'rechnung', 'abd', 'agv'];
-  if (!allowedTypes.includes(type)) {
-    return res.status(400).json({ error: 'Ungültiger Dokumententyp' });
-  }
-
-  let newStatus = null;
-  if (type === 'abd') newStatus = 'abd_erhalten';
-  if (type === 'agv') newStatus = 'agv_vorliegend';
-
-  if (newStatus) {
-    db.run(`UPDATE vorgaenge SET status = ? WHERE id = ?`, [newStatus, req.params.id], (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: `${type.toUpperCase()} hochgeladen und Status geändert` });
-    });
-  } else {
-    res.json({ message: `${type.toUpperCase()} hochgeladen` });
-  }
-});
-
-// Datei Download
-app.get('/api/vorgaenge/:id/download/:type', (req, res) => {
-  const filePath = `./uploads/${req.params.id}/${req.params.type}.pdf`;
-  if (fs.existsSync(filePath)) {
-    res.download(filePath);
-  } else {
-    res.status(404).json({ error: 'Datei nicht gefunden' });
-  }
-});
-
+// Korrektes Port-Binding für Render
 const port = process.env.PORT || 3001;
-app.listen(port, () => console.log(`✅ API läuft unter http://localhost:${port}`));
+app.listen(port, '0.0.0.0', () => console.log(`✅ API läuft unter http://localhost:${port}`));
