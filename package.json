@@ -6,7 +6,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "nodemon server/index.js",
-    "check-arch": "node check-arch.js"
+    "check-arch": "node check-arch.js",
+    "start": "node server/index.js"
   },
   "dependencies": {
     "file-saver": "^2.0.5",
