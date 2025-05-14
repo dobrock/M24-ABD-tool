@@ -10,10 +10,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// SQLite initialisieren
 const db = new sqlite3.Database('./vorgaenge.db');
 
-// Tabelle anlegen (inkl. Felder für Vorgang)
+// Tabelle anlegen
 db.run(`
   CREATE TABLE IF NOT EXISTS vorgaenge (
     id TEXT PRIMARY KEY,
@@ -42,18 +41,23 @@ const upload = multer({ storage });
 // Vorgang anlegen
 app.post('/api/vorgaenge', (req, res) => {
   const id = uuidv4();
-  const { empfaenger, land, mrn, notizen } = req.body;
+  const { empfaenger, land, mrn, notizen } = req.body || {};
+  if (!empfaenger || !land || !mrn) {
+    return res.status(400).json({ error: 'Fehlende Pflichtfelder (empfaenger, land, mrn)' });
+  }
   const datum = new Date().toISOString();
-  db.run(`INSERT INTO vorgaenge (id, erstelldatum, empfaenger, land, mrn, status, notizen)
-    VALUES (?, ?, ?, ?, ?, 'angelegt', ?)`,
+  db.run(
+    `INSERT INTO vorgaenge (id, erstelldatum, empfaenger, land, mrn, status, notizen)
+     VALUES (?, ?, ?, ?, ?, 'angelegt', ?)`,
     [id, datum, empfaenger, land, mrn, notizen || ''],
     (err) => {
-      if (err) return res.status(500).send(err);
+      if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true, id });
-    });
+    }
+  );
 });
 
-// Alle Vorgänge mit Dokumentenstatus anzeigen
+// Alle Vorgänge
 app.get('/api/vorgaenge', (req, res) => {
   db.all(`SELECT * FROM vorgaenge ORDER BY erstelldatum DESC`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -68,11 +72,11 @@ app.get('/api/vorgaenge', (req, res) => {
   });
 });
 
-// Einzelnen Vorgang anzeigen mit Dokumentstatus
+// Einzelner Vorgang
 app.get('/api/vorgaenge/:id', (req, res) => {
   db.get(`SELECT * FROM vorgaenge WHERE id = ?`, [req.params.id], (err, row) => {
-    if (err) return res.status(500).send(err);
-    if (!row) return res.status(404).send('Nicht gefunden');
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Vorgang nicht gefunden' });
     res.json({
       ...row,
       hasPdf: fs.existsSync(`./uploads/${row.id}/pdf.pdf`),
@@ -83,7 +87,7 @@ app.get('/api/vorgaenge/:id', (req, res) => {
   });
 });
 
-// Vorgang löschen inkl. Dateien
+// Vorgang löschen
 app.delete('/api/vorgaenge/:id', (req, res) => {
   db.run('DELETE FROM vorgaenge WHERE id = ?', [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
@@ -96,7 +100,9 @@ app.delete('/api/vorgaenge/:id', (req, res) => {
 app.patch('/api/vorgaenge/:id/status', (req, res) => {
   const { status } = req.body;
   const allowedStatuses = ['angelegt', 'ausfuhr_beantragt', 'abd_erhalten', 'agv_vorliegend'];
-  if (!allowedStatuses.includes(status)) return res.status(400).json({ error: 'Ungültiger Status' });
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Ungültiger Status' });
+  }
   db.run('UPDATE vorgaenge SET status = ? WHERE id = ?', [status, req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     if (this.changes === 0) return res.status(404).json({ error: 'Vorgang nicht gefunden' });
@@ -104,11 +110,13 @@ app.patch('/api/vorgaenge/:id/status', (req, res) => {
   });
 });
 
-// Datei Upload (setzt Status bei ABD/AGV)
+// Datei Upload
 app.post('/api/vorgaenge/:id/upload/:type', upload.single('file'), (req, res) => {
   const { type } = req.params;
   const allowedTypes = ['pdf', 'rechnung', 'abd', 'agv'];
-  if (!allowedTypes.includes(type)) return res.status(400).json({ error: 'Ungültiger Dokumententyp' });
+  if (!allowedTypes.includes(type)) {
+    return res.status(400).json({ error: 'Ungültiger Dokumententyp' });
+  }
 
   let newStatus = null;
   if (type === 'abd') newStatus = 'abd_erhalten';
@@ -130,10 +138,9 @@ app.get('/api/vorgaenge/:id/download/:type', (req, res) => {
   if (fs.existsSync(filePath)) {
     res.download(filePath);
   } else {
-    res.status(404).send('Datei nicht gefunden');
+    res.status(404).json({ error: 'Datei nicht gefunden' });
   }
 });
-
 
 const port = process.env.PORT || 3001;
 app.listen(port, () => console.log(`✅ API läuft unter http://localhost:${port}`));
