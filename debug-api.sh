@@ -1,35 +1,44 @@
 #!/bin/bash
 
-API_URL="https://m24-abd-tool-v1-1.onrender.com"
+# Konfigurierbare API-URL (Backend)
+API_URL="https://m24-abd-tool-v1-1-api.onrender.com/api/vorgaenge"
 
 echo "➡️  Prüfen: API-Status..."
-curl -s -I "$API_URL" | grep HTTP
+curl -s -o /dev/null -w "%{http_code}\n" "$API_URL"
 echo
 
-echo "➡️  Prüfen: Vorgang anlegen..."
-RESPONSE=$(curl -s -X POST $API_URL/api/vorgaenge \
+echo "➡️  Anlegen neuer Vorgang..."
+RESPONSE=$(curl -s -X POST "$API_URL" \
   -H "Content-Type: application/json" \
-  -d '{"empfaenger": "Muster GmbH", "land": "USA", "mrn": "MRN-987654321", "notizen": "Debug Test"}')
+  -d '{"empfaenger": "Debug GmbH", "land": "USA", "mrn": "MRN-DEBUG-123", "notizen": "Debug API All-in-One"}')
 
-echo "Antwort:"
-echo "$RESPONSE" | head -c 200
-echo
-
-ID=$(echo $RESPONSE | jq -r '.id')
-
-if [[ "$ID" == "null" || -z "$ID" ]]; then
-  echo "❌ Fehler: Kein gültiges JSON oder .id fehlt!"
+echo "Antwort: $RESPONSE"
+ID=$(echo "$RESPONSE" | jq -r '.id // empty')
+if [[ -z "$ID" ]]; then
+  echo "❌ Fehler: Kein Vorgang angelegt!"
   exit 1
 fi
 
 echo "✅ Vorgang erfolgreich angelegt mit ID: $ID"
 echo
 
-echo "➡️  Prüfen: Download-Endpunkte (nur Header Check)"
 for doc in pdf rechnung abd agv; do
-  echo "$doc:"
-  curl -s -I "$API_URL/api/vorgaenge/$ID/download/$doc" | grep HTTP
+  echo "➡️  Upload: $doc"
+  RESPONSE_UPLOAD=$(curl -s -X POST "$API_URL/$ID/upload/$doc" \
+    -F "file=@test-files/test-$doc.pdf")
+  echo "$RESPONSE_UPLOAD" | jq .
   echo
 done
 
-echo "✅ Debug-Check abgeschlossen."
+echo "➡️  Abruf: Vorgangsdaten prüfen"
+curl -s "$API_URL/$ID" | jq .
+echo
+
+echo "➡️  Prüfung: Download-Endpunkte (nur Header Check)"
+for doc in pdf rechnung abd agv; do
+  echo "$doc:"
+  curl -s -I "$API_URL/$ID/download/$doc" | grep HTTP
+  echo
+done
+
+echo "✅ Debug-API All-in-One abgeschlossen."
