@@ -2,8 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const { Pool } = require('pg');
-
 const app = express();
+
+require('dotenv').config({ path: '.env.local' }); // explizit sicherstellen
+console.log('📦 Verbinde mit PG:', process.env.PG_CONNECTION);
+
 app.use(cors());
 app.use(express.json());
 
