@@ -1,65 +1,91 @@
 const express = require('express');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// SQLite Datenbank initialisieren
-const db = new sqlite3.Database('./vorgaenge.db', (err) => {
-  if (err) {
-    console.error('❌ Fehler beim Öffnen der SQLite-Datenbank:', err);
-    process.exit(1);
-  } else {
-    console.log('✅ SQLite-Datenbank erfolgreich verbunden.');
-  }
+// PostgreSQL Pool (Render DB)
+const pool = new Pool({
+  connectionString: 'postgres://abd_tool_db_user:86pMsUuyCPCxhIBHAy0FxxZU9Z6aA75d@dpg-d0j3bip5pdvs73ekrcvg-a:5432/abd_tool_db',
+  ssl: { rejectUnauthorized: false }
 });
 
 // Tabelle anlegen (falls noch nicht existiert)
-db.run(`
-  CREATE TABLE IF NOT EXISTS vorgaenge (
-    id TEXT PRIMARY KEY,
-    erstelldatum TEXT,
-    mrn TEXT,
-    empfaenger TEXT,
-    land TEXT,
-    waren TEXT,
-    status TEXT,
-    notizen TEXT
-  )
-`);
+const initDB = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vorgaenge (
+        id UUID PRIMARY KEY,
+        erstelldatum TIMESTAMP,
+        mrn TEXT,
+        empfaenger TEXT,
+        land TEXT,
+        waren TEXT,
+        status TEXT,
+        notizen TEXT
+      )
+    `);
+    console.log('✅ Tabelle vorgaenge bereit.');
+  } catch (err) {
+    console.error('❌ Fehler beim Initialisieren der Datenbank:', err);
+  }
+};
 
 // Vorgang anlegen
-app.post('/api/vorgang', (req, res) => {
+app.post('/api/vorgang', async (req, res) => {
   const id = uuidv4();
   const { mrn, empfaenger, land, waren, status, notizen } = req.body;
-  const datum = new Date().toISOString();
-  db.run(`INSERT INTO vorgaenge (id, erstelldatum, mrn, empfaenger, land, waren, status, notizen)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, datum, mrn, empfaenger, land, waren, status || 'offen', notizen || ''],
-    (err) => {
-      if (err) return res.status(500).send(err.message);
-      res.json({ success: true, id });
-    });
+  try {
+    await pool.query(
+      `INSERT INTO vorgaenge (id, erstelldatum, mrn, empfaenger, land, waren, status, notizen)
+       VALUES ($1, NOW(), $2, $3, $4, $5, $6, $7)`,
+      [id, mrn, empfaenger, land, waren, status || 'offen', notizen || '']
+    );
+    res.json({ success: true, id });
+  } catch (err) {
+    console.error('❌ Fehler beim Anlegen des Vorgangs:', err);
+    res.status(500).send(err.message);
+  }
 });
 
 // Vorgänge anzeigen
-app.get('/api/vorgaenge', (req, res) => {
-  db.all(`SELECT * FROM vorgaenge ORDER BY erstelldatum DESC`, [], (err, rows) => {
-    if (err) return res.status(500).send(err.message);
-    res.json(rows);
-  });
+app.get('/api/vorgaenge', async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT * FROM vorgaenge ORDER BY erstelldatum DESC`);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('❌ Fehler beim Abrufen:', err);
+    res.status(500).send(err.message);
+  }
 });
 
 // Vorgang nach ID anzeigen
-app.get('/api/vorgang/:id', (req, res) => {
-  db.get(`SELECT * FROM vorgaenge WHERE id = ?`, [req.params.id], (err, row) => {
-    if (err) return res.status(500).send(err.message);
-    if (!row) return res.status(404).send('Nicht gefunden');
-    res.json(row);
-  });
+app.get('/api/vorgang/:id', async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT * FROM vorgaenge WHERE id = $1`, [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).send('Nicht gefunden');
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('❌ Fehler beim Abrufen des Vorgangs:', err);
+    res.status(500).send(err.message);
+  }
+});
+
+// Download Vorgang (Platzhalter PDF)
+app.get('/api/download/:id', async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT * FROM vorgaenge WHERE id = $1`, [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).send('Vorgang nicht gefunden.');
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.send('%PDF-1.4\n% Fake-PDF-Content\n... (Hier käme dein PDF)');
+  } catch (err) {
+    console.error('❌ Fehler beim Download:', err);
+    res.status(500).send(err.message);
+  }
 });
 
 // Fallback für alle anderen Routen
@@ -67,6 +93,9 @@ app.use((req, res) => {
   res.status(404).send('Route nicht gefunden');
 });
 
-// Korrektes Port-Binding für Render
+// Start Server
 const port = process.env.PORT || 3001;
 app.listen(port, '0.0.0.0', () => console.log(`✅ API läuft unter http://localhost:${port}`));
+
+// Init DB beim Start
+initDB();
