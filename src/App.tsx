@@ -1,12 +1,9 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import ExportForm from './pages/ExportForm';
-import VorgangsListe from './pages/VorgangsListe';
-import VorgangDetail from './pages/VorgangDetail';
+import Navigation from './components/Navigation';
 
 export default function App() {
   return (
     <Router>
+      <Navigation />
       <Routes>
         <Route path="/" element={<ExportForm />} />
         <Route path="/verwaltung" element={<VorgangsListe />} />
