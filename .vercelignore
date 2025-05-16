@@ -1,0 +1,30 @@
+# 📁 Lokale Entwicklungsverzeichnisse
+node_modules/
+dist/
+.vscode/
+.idea/
+
+# 🔬 Diagnose- und Test-Skripte
+*.sh
+*.test.*
+diagnose-*.*
+debug-*.*
+all-in-one-*.*
+render-status-check.*
+
+# 📄 Editor- oder Systemdateien
+.DS_Store
+Thumbs.db
+
+# 🔒 Private/temporäre Dateien
+.env.local
+.env.*
+*.log
+
+# 📦 Backup- oder gespeicherte Versionen
+*.save
+*.bak
+
+# 🧪 Einzelne bekannte Diagnose-Dateien (optional, falls vorhanden)
+ABD-Tool-Diagnose/
+download-*.pdf
