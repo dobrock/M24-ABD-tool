@@ -9,7 +9,7 @@ app.use(express.json());
 
 // PostgreSQL Pool (Render DB)
 const pool = new Pool({
-  connectionString: 'postgres://abd_tool_db_user:86pMsUuyCPCxhIBHAy0FxxZU9Z6aA75d@dpg-d0j3bip5pdvs73ekrcvg-a:5432/abd_tool_db',
+  connectionString: process.env.PG_CONNECTION,
   ssl: { rejectUnauthorized: false }
 });
 
@@ -35,7 +35,7 @@ const initDB = async () => {
 };
 
 // Vorgang anlegen
-app.post('/api/vorgang', async (req, res) => {
+app.post('/api/vorgaenge', async (req, res) => {
   const id = uuidv4();
   const { mrn, empfaenger, land, waren, status, notizen } = req.body;
   try {
@@ -63,7 +63,7 @@ app.get('/api/vorgaenge', async (req, res) => {
 });
 
 // Vorgang nach ID anzeigen
-app.get('/api/vorgang/:id', async (req, res) => {
+app.get('/api/vorgaenge/:id', async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM vorgaenge WHERE id = $1`, [req.params.id]);
     if (result.rows.length === 0) return res.status(404).send('Nicht gefunden');

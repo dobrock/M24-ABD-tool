@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>API Live-Test</title>
+</head>
+<body style="font-family: sans-serif; padding: 2rem; background: #f4f4f4;">
+  <h1>Live-API Test</h1>
+  <button onclick="sendTest()">Eintrag senden</button>
+  <pre id="output" style="margin-top: 1rem; background: #fff; padding: 1rem;"></pre>
+
+  <script>
+    async function sendTest() {
+      const payload = {
+        mrn: "LIVE-TEST-001",
+        empfaenger: "Testfirma API",
+        land: "DE",
+        waren: "Bremsbeläge",
+        status: "angelegt",
+        notizen: "Live-Testeintrag"
+      };
+
+      try {
+        const res = await fetch("https://m24-abd-api-backend.onrender.com/api/vorgang", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const result = await res.text();
+        document.getElementById("output").innerText = result;
+      } catch (err) {
+        document.getElementById("output").innerText = "Fehler: " + err;
+      }
+    }
+  </script>
+</body>
+</html>

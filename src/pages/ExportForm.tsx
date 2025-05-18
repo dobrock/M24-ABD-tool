@@ -52,7 +52,18 @@ export default function App() {
     generatePDF({ ...formData, items });
     // Vorgang automatisch anlegen (API Call)
 try {
-  await fetch(import.meta.env.VITE_API_URL + '/api/vorgaenge', {
+await fetch('https://m24-abd-api-backend.onrender.com/api/vorgang', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    mrn: formData.invoiceNumber,
+    empfaenger: formData.recipient.name,
+    land: formData.recipient.country,
+    waren: items.map(i => i.description).join(', '),
+    status: 'angelegt',
+    notizen: 'Automatisch generiert'
+  })
+  await fetch('https://m24-abd-api-backend.onrender.com/api/vorgang', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -63,7 +74,7 @@ try {
       status: 'angelegt',
       notizen: 'Automatisch generiert'
     })
-  });  
+  }); 
     console.log('Vorgang automatisch gespeichert');
   } catch (error) {
     console.error('Fehler beim automatischen Speichern:', error);
