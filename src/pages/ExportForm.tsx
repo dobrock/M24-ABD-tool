@@ -44,41 +44,29 @@ export default function App() {
     setItems(updatedItems);
   };
 
-  const addItem = () => {
-    setItems([...items, { description: '', tariff: '', weight: '', value: '' }]);
-  };
-
   const handleSubmit = async () => {
     generatePDF({ ...formData, items });
+  
     // Vorgang automatisch anlegen (API Call)
-try {
-await fetch('https://m24-abd-api-backend.onrender.com/api/vorgang', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    mrn: formData.invoiceNumber,
-    empfaenger: formData.recipient.name,
-    land: formData.recipient.country,
-    waren: items.map(i => i.description).join(', '),
-    status: 'angelegt',
-    notizen: 'Automatisch generiert'
-  })
-  await fetch('https://m24-abd-api-backend.onrender.com/api/vorgaenge', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      mrn: formData.invoiceNumber,
-      empfaenger: formData.recipient.name,
-      land: formData.recipient.country,
-      waren: items.map(i => i.description).join(', '),
-      status: 'angelegt',
-      notizen: 'Automatisch generiert'
-    })
-  }); 
-    console.log('Vorgang automatisch gespeichert');
-  } catch (error) {
-    console.error('Fehler beim automatischen Speichern:', error);
-  }  
+    try {
+      const response = await fetch('https://m24-abd-api-backend.onrender.com/api/vorgaenge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mrn: formData.invoiceNumber,
+          empfaenger: formData.recipient.name,
+          land: formData.recipient.country,
+          waren: items.map(i => i.description).join(', '),
+          status: 'angelegt',
+          notizen: 'Automatisch generiert'
+        })
+      });
+  
+      const result = await response.json();
+      console.log('Antwort vom Server:', result);
+    } catch (error) {
+      console.error('Fehler beim automatischen Speichern:', error);
+    }
   };
 
   return (
