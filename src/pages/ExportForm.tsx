@@ -52,7 +52,7 @@ export default function App() {
     generatePDF({ ...formData, items });
     // Vorgang automatisch anlegen (API Call)
 try {
-  await fetch(import.meta.env.VITE_API_URL + '/api/vorgang', {
+  await fetch(import.meta.env.VITE_API_URL + '/api/vorgaenge', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
