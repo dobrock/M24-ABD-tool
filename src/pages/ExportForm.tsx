@@ -63,7 +63,7 @@ await fetch('https://m24-abd-api-backend.onrender.com/api/vorgang', {
     status: 'angelegt',
     notizen: 'Automatisch generiert'
   })
-  await fetch('https://m24-abd-api-backend.onrender.com/api/vorgang', {
+  await fetch('https://m24-abd-api-backend.onrender.com/api/vorgaenge', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
