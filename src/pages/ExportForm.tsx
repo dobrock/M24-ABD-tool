@@ -1,3 +1,4 @@
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 import React, { useState, useEffect } from 'react';
 import logo from '../assets/MOTORSPORT24-Logo_768px.png';
 import { generatePDF } from '../ExportPDF';
@@ -50,7 +51,7 @@ export default function App() {
   
     // Vorgang automatisch anlegen (API Call)
     try {
-      const response = await fetch('https://m24-abd-api-backend.onrender.com/api/vorgaenge', {
+      const response = await fetch(`${API_BASE_URL}/api/vorgaenge`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
