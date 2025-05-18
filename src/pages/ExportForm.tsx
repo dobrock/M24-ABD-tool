@@ -45,7 +45,8 @@ export default function App() {
   };
 
   const handleSubmit = async () => {
-    generatePDF({ ...formData, items });
+    console.log('Form wird übermittelt');
+    generatePDF({ ...formData, items });  
   
     // Vorgang automatisch anlegen (API Call)
     try {
