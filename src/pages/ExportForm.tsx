@@ -54,13 +54,16 @@ export default function App() {
 try {
   await fetch(import.meta.env.VITE_API_URL + '/api/vorgang', {
     method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        kundename: formData.recipient.name,
-        mrn: formData.invoiceNumber,
-        erstelldatum: new Date().toISOString().split('T')[0]
-      })
-    });
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      mrn: formData.invoiceNumber,
+      empfaenger: formData.recipient.name,
+      land: formData.recipient.country,
+      waren: items.map(i => i.description).join(', '),
+      status: 'angelegt',
+      notizen: 'Automatisch generiert'
+    })
+  });  
     console.log('Vorgang automatisch gespeichert');
   } catch (error) {
     console.error('Fehler beim automatischen Speichern:', error);
@@ -284,7 +287,6 @@ try {
       <div className="mt-12">
       <VorgangsTest />
       </div>
-
     </div>
   );
 }
