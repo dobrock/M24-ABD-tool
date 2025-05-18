@@ -1,8 +1,9 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL;
 import React, { useState, useEffect } from 'react';
 import logo from '../assets/MOTORSPORT24-Logo_768px.png';
 import { generatePDF } from '../ExportPDF';
 import VorgangsTest from '../components/VorgangsTest';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function App() {
   const [items, setItems] = useState([
