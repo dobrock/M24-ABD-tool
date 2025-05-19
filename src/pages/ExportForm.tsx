@@ -4,6 +4,7 @@ import { generatePDF } from '../ExportPDF';
 import VorgangsTest from '../components/VorgangsTest';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
+console.log('🧪 API_BASE_URL:', API_BASE_URL);
 
 export default function App() {
   const [items, setItems] = useState([
@@ -55,7 +56,7 @@ export default function App() {
     generatePDF({ ...formData, items });
   
     try {
-      const response = await fetch(`${API_BASE_URL}/api/vorgaenge`, {
+      const response = await fetch('https://m24-abd-api-backend.onrender.com/api/vorgang', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
