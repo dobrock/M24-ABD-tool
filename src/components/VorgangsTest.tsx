@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 const VorgangsTest = () => {
   const [vorgaenge, setVorgaenge] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/vorgaenge')
+    fetch(`${API_BASE_URL}/api/vorgaenge`)
       .then(res => res.json())
       .then(data => setVorgaenge(data))
       .catch(err => console.error('Fehler beim Laden:', err));
@@ -19,7 +21,7 @@ const VorgangsTest = () => {
         <ul>
           {vorgaenge.map(vorgang => (
             <li key={vorgang.id}>
-              {vorgang.kundename} - {vorgang.mrn} ({vorgang.erstelldatum})
+              {vorgang.empfaenger} – {vorgang.mrn} ({new Date(vorgang.erstelldatum).toLocaleDateString()})
             </li>
           ))}
         </ul>
