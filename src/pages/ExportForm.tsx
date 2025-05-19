@@ -100,6 +100,7 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [statusMessage, setStatusMessage] = useState('');
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
