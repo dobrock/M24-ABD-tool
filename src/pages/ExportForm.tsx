@@ -51,6 +51,28 @@ export default function App() {
   };
   
   const handleSubmit = async () => {
+    console.log('Form wird übermittelt');
+    generatePDF({ ...formData, items });
+  
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/vorgaenge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mrn: formData.invoiceNumber,
+          empfaenger: formData.recipient.name,
+          land: formData.recipient.country,
+          waren: items.map(i => i.description).join(', '),
+          status: 'angelegt',
+          notizen: 'Automatisch generiert'
+        })
+      });
+  
+      const result = await response.json();
+      console.log('Antwort vom Server:', result);
+    } catch (error) {
+      console.error('Fehler beim automatischen Speichern:', error);
+    }
   };
 
     // Vorgang automatisch anlegen (API Call)
