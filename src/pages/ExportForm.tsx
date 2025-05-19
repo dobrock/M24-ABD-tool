@@ -51,9 +51,8 @@ export default function App() {
   };
   
   const handleSubmit = async () => {
-    ...
   };
-  
+
     // Vorgang automatisch anlegen (API Call)
     try {
       const response = await fetch(`${API_BASE_URL}/api/vorgaenge`, {
