@@ -53,10 +53,13 @@ export default function App() {
   
   const handleSubmit = async () => {
     console.log('Form wird übermittelt');
+    setIsSubmitting(true);
+    setIsSuccess(false);
+  
     generatePDF({ ...formData, items });
   
     try {
-      const response = await fetch('https://m24-abd-api-backend.onrender.com/api/vorgang', {
+      const response = await fetch(`${API_BASE_URL}/api/vorgang`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -71,10 +74,30 @@ export default function App() {
   
       const result = await response.json();
       console.log('Antwort vom Server:', result);
+  
+      setIsSubmitting(false);
+      setIsSuccess(true);
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Fehler beim automatischen Speichern:', error);
+      setIsSubmitting(false);
+      setIsSuccess(false);
+    }
+  };
+  
+      const result = await response.json();
+      console.log('Antwort vom Server:', result);
     } catch (error) {
       console.error('Fehler beim automatischen Speichern:', error);
     }
   };
+
+  const [refreshKey, setRefreshKey] = useState(0);
+  // ... in handleSubmit nach erfolgreichem Eintrag:
+  setRefreshKey(prev => prev + 1);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -281,17 +304,20 @@ export default function App() {
 
         {/* Submit */}
         <div className="mt-12 text-center">
-          <button
-            onClick={handleSubmit}
-            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-2 px-6 rounded-xl shadow-md"
-          >
-            Atlas Eingabe erstellen
-          </button>
+        <button
+  onClick={handleSubmit}
+  disabled={isSubmitting}
+  className={`${
+    isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+  } text-white font-semibold py-2 px-6 rounded-xl shadow-md transition`}
+>
+  {isSubmitting ? '⏳ Wird gesendet...' : isSuccess ? '✅ Erfolgreich' : 'Atlas Eingabe erstellen'}
+</button>
         </div>
       </div>
 
       <div className="mt-12">
-      <VorgangsTest />
+      <VorgangsTest key={refreshKey} />
       </div>
     </div>
   );
