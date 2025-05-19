@@ -84,7 +84,6 @@ export default function App() {
       setIsSuccess(false);
     }
   };
-  };
 
   const [refreshKey, setRefreshKey] = useState(0);
   // ... in handleSubmit nach erfolgreichem Eintrag:
