@@ -59,7 +59,7 @@ export default function App() {
     generatePDF({ ...formData, items });
   
     try {
-      const response = await fetch(`${API_BASE_URL}/api/vorgang`, {
+      const response = await fetch(`${API_BASE_URL}/api/vorgaenge`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
