@@ -55,11 +55,12 @@ export default function App() {
     console.log('Form wird übermittelt');
     setIsSubmitting(true);
     setIsSuccess(false);
+    setStatusMessage('');
   
     generatePDF({ ...formData, items });
   
     try {
-      const response = await fetch(`${API_BASE_URL}/api/vorgang`, {
+      const response = await fetch(`${API_BASE_URL}/api/vorgaenge`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -74,14 +75,25 @@ export default function App() {
   
       const result = await response.json();
       console.log('Antwort vom Server:', result);
-
+  
       setIsSubmitting(false);
       setIsSuccess(true);
+      setStatusMessage('✅ Eintrag gespeichert – du wirst zur Übersicht weitergeleitet ...');
+  
       setRefreshKey(prev => prev + 1);
+  
+      // Sanfte Weiterleitung zur Übersicht
+      setTimeout(() => {
+        const overview = document.getElementById('vorgangsliste');
+        if (overview) {
+          overview.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 500);
     } catch (error) {
       console.error('Fehler beim automatischen Speichern:', error);
       setIsSubmitting(false);
       setIsSuccess(false);
+      setStatusMessage('❌ Fehler beim Speichern. Bitte später erneut versuchen.');
     }
   };
 
@@ -294,16 +306,19 @@ export default function App() {
 
         {/* Submit */}
         <div className="mt-12 text-center">
-        <button
-  onClick={handleSubmit}
-  disabled={isSubmitting}
-  className={`${
-    isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
-  } text-white font-semibold py-2 px-6 rounded-xl shadow-md transition`}
->
-  {isSubmitting ? '⏳ Wird gesendet...' : isSuccess ? '✅ Erfolgreich' : 'Atlas Eingabe erstellen'}
-</button>
-        </div>
+  <button
+    onClick={handleSubmit}
+    disabled={isSubmitting}
+    className={`${
+      isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+    } text-white font-semibold py-2 px-6 rounded-xl shadow-md transition`}
+  >
+    {isSubmitting ? '⏳ Wird gesendet...' : isSuccess ? '✅ Erfolgreich' : 'Atlas Eingabe erstellen'}
+  </button>
+  {statusMessage && (
+    <p className="mt-4 text-sm text-gray-600">{statusMessage}</p>
+  )}
+</div>
       </div>
 
       <div className="mt-12">
