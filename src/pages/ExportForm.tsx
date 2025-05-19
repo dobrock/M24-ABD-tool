@@ -74,7 +74,7 @@ export default function App() {
   
       const result = await response.json();
       console.log('Antwort vom Server:', result);
-  
+
       setIsSubmitting(false);
       setIsSuccess(true);
       setRefreshKey(prev => prev + 1);
