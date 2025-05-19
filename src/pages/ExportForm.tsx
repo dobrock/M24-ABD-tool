@@ -46,6 +46,10 @@ export default function App() {
     setItems(updatedItems);
   };
 
+  const addItem = () => {
+    setItems([...items, { description: '', tariff: '', weight: '', value: '' }]);
+  };
+
   const handleSubmit = async () => {
     console.log('Form wird übermittelt');
     generatePDF({ ...formData, items });  
