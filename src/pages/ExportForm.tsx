@@ -75,28 +75,6 @@ export default function App() {
     }
   };
 
-    // Vorgang automatisch anlegen (API Call)
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/vorgaenge`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mrn: formData.invoiceNumber,
-          empfaenger: formData.recipient.name,
-          land: formData.recipient.country,
-          waren: items.map(i => i.description).join(', '),
-          status: 'angelegt',
-          notizen: 'Automatisch generiert'
-        })
-      });
-  
-      const result = await response.json();
-      console.log('Antwort vom Server:', result);
-    } catch (error) {
-      console.error('Fehler beim automatischen Speichern:', error);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
