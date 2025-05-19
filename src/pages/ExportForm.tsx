@@ -45,14 +45,14 @@ export default function App() {
     updatedItems[index][field] = value;
     setItems(updatedItems);
   };
-
+  
   const addItem = () => {
     setItems([...items, { description: '', tariff: '', weight: '', value: '' }]);
   };
-
+  
   const handleSubmit = async () => {
-    console.log('Form wird übermittelt');
-    generatePDF({ ...formData, items });  
+    ...
+  };
   
     // Vorgang automatisch anlegen (API Call)
     try {
