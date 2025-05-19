@@ -35,7 +35,7 @@ export default function VorgangsListe() {
   }, []);
 
   const toggleStatus = async (vorgang: Vorgang) => {
-    let newStatus = vorgang.status === 'angelegt' ? 'ausfuhr_beantragt' : 'angelegt';
+    const newStatus = vorgang.status === 'angelegt' ? 'ausfuhr_beantragt' : 'angelegt';
     try {
       await fetch(`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/status`, {
         method: 'PATCH',
@@ -73,105 +73,98 @@ export default function VorgangsListe() {
   };
 
   return (
-    <div className="p-8">
-      <h1 className="text-xl font-bold mb-4">Vorgangsübersicht</h1>
-      {vorgaenge.length === 0 ? (
-        <p>Keine Vorgänge vorhanden.</p>
-      ) : (
-        <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden table-fixed">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="w-48 text-left px-4 py-2">Empfänger</th>
-              <th className="w-24 text-left px-4 py-2">Zielland</th>
-              <th className="w-32 text-left px-4 py-2">MRN</th>
-              <th className="w-32 text-left px-4 py-2">Erstellt am</th>
-              <th className="w-48 text-left px-4 py-2">Status</th>
-              <th className="w-40 text-center px-4 py-2">Dokumente</th>
-              <th className="w-32 text-right px-4 py-2">Aktion</th>
-            </tr>
-          </thead>
-          <tbody>
-            {vorgaenge.map((vorgang) => (
-              <tr key={vorgang.id} className="border-b">
-                <td className="px-4 py-2">{vorgang.empfaenger}</td>
-                <td className="px-4 py-2">{vorgang.land}</td>
-                <td className="px-4 py-2">{vorgang.mrn}</td>
-                <td className="px-4 py-2">{new Date(vorgang.erstelldatum).toLocaleDateString()}</td>
-                <td className="px-4 py-2">
-                  {['angelegt', 'ausfuhr_beantragt'].includes(vorgang.status) ? (
-                    <span
-                      className="cursor-pointer hover:text-blue-600"
-                      onClick={() => toggleStatus(vorgang)}
-                      title="Klicken, um Status zu wechseln"
-                    >
-                      {statusIcons[vorgang.status]} {statusLabels[vorgang.status]}
-                    </span>
-                  ) : (
-                    <span>{statusIcons[vorgang.status]} {statusLabels[vorgang.status]}</span>
-                  )}
-                </td>
-                <td className="px-4 py-2 text-xl whitespace-nowrap text-center">
-  {vorgang.hasPdf && (
-    <a
-      href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/pdf`}
-      title="PDF herunterladen"
-      className="mr-2"
-      style={{ fontSize: '75%' }}
-    >
-      📄
-    </a>
-  )}
-  {vorgang.hasInvoice && (
-    <a
-      href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/rechnung`}
-      title="Rechnung herunterladen"
-      className="mr-2"
-      style={{ fontSize: '75%' }}
-    >
-      📄
-    </a>
-  )}
-  {vorgang.hasAgv ? (
-    <a
-      href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/agv`}
-      title="AGV herunterladen"
-      style={{ fontSize: '75%' }}
-    >
-      📄
-    </a>
-  ) : vorgang.hasAbd ? (
-    <a
-      href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/abd`}
-      title="ABD herunterladen"
-      style={{ fontSize: '75%' }}
-    >
-      📄
-    </a>
-  ) : null}
-</td>
-<td className="px-4 py-2">
-  <div className="flex justify-end items-center space-x-2">
-    <button
-      onClick={() => navigate(`/vorgaenge/${vorgang.id}`)}
-      title="Bearbeiten"
-      style={{ fontSize: '75%' }}
-    >
-      ✏️
-    </button>
-    <button
-      onClick={() => handleDelete(vorgang.id)}
-      title="Löschen"
-      style={{ fontSize: '75%' }}
-    >
-      ❌
-    </button>
-  </div>
-</td>
+    <div className="min-h-screen bg-gray-50 pt-4 pb-12 px-4 sm:px-6 lg:px-8">
+<h1 className="text-2xl font-bold text-gray-800 mb-6 max-w-4xl mx-auto pl-10">
+  Vorgangsübersicht
+</h1>
+
+      <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
+        {vorgaenge.length === 0 ? (
+          <p>Keine Vorgänge vorhanden.</p>
+        ) : (
+          <table className="min-w-full bg-white table-fixed">
+            <thead className="bg-gray-200 text-gray-700">
+              <tr>
+                <th className="w-68 text-left px-4 py-2">Empfänger</th>
+                <th className="w-24 text-left px-4 py-2">Zielland</th>
+                <th className="w-40 text-left px-4 py-2">MRN</th>
+                <th className="w-32 text-left px-4 py-2">Erstellt am</th>
+                <th className="w-55 text-left px-4 py-2">Status</th>
+                <th className="w-15 text-center px-4 py-2">Dokumente</th>
+                <th className="w-22 text-right px-4 py-2">Aktion</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {vorgaenge.map((vorgang) => (
+                <tr key={vorgang.id} className="border-b">
+                  <td className="px-4 py-2">{vorgang.empfaenger}</td>
+                  <td className="px-4 py-2">{vorgang.land}</td>
+                  <td className="px-4 py-2">{vorgang.mrn}</td>
+                  <td className="px-4 py-2">{new Date(vorgang.erstelldatum).toLocaleDateString()}</td>
+                  <td className="px-4 py-2">
+                    {['angelegt', 'ausfuhr_beantragt'].includes(vorgang.status) ? (
+                      <span
+                        className="cursor-pointer hover:text-blue-600"
+                        onClick={() => toggleStatus(vorgang)}
+                        title="Klicken, um Status zu wechseln"
+                      >
+                        {statusIcons[vorgang.status]} {statusLabels[vorgang.status]}
+                      </span>
+                    ) : (
+                      <span>{statusIcons[vorgang.status]} {statusLabels[vorgang.status]}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-xl whitespace-nowrap text-center">
+                    {vorgang.hasPdf && (
+                      <a
+                        href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/pdf`}
+                        title="PDF herunterladen"
+                        className="mr-2"
+                        style={{ fontSize: '75%' }}
+                      >📄</a>
+                    )}
+                    {vorgang.hasInvoice && (
+                      <a
+                        href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/rechnung`}
+                        title="Rechnung herunterladen"
+                        className="mr-2"
+                        style={{ fontSize: '75%' }}
+                      >📄</a>
+                    )}
+                    {vorgang.hasAgv ? (
+                      <a
+                        href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/agv`}
+                        title="AGV herunterladen"
+                        style={{ fontSize: '75%' }}
+                      >📄</a>
+                    ) : vorgang.hasAbd ? (
+                      <a
+                        href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/abd`}
+                        title="ABD herunterladen"
+                        style={{ fontSize: '75%' }}
+                      >📄</a>
+                    ) : null}
+                  </td>
+                  <td className="px-4 py-2">
+                    <div className="flex justify-end items-center space-x-2">
+                      <button
+                        onClick={() => navigate(`/vorgaenge/${vorgang.id}`)}
+                        title="Bearbeiten"
+                        style={{ fontSize: '75%' }}
+                      >✏️</button>
+                      <button
+                        onClick={() => handleDelete(vorgang.id)}
+                        title="Löschen"
+                        style={{ fontSize: '75%' }}
+                      >❌</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }

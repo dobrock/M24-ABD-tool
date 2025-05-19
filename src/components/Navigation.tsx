@@ -17,7 +17,7 @@ export default function Navigation() {
 
   return (
     <nav className="bg-gray-900 text-white shadow">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div className="max-w-4xl mx-auto pb-2 pt-2 flex justify-between items-center">
         <div className="text-lg font-bold">M24 ABD-Tool</div>
         <button className="md:hidden" onClick={() => setOpen(!open)}>
           <Menu className="w-6 h-6" />

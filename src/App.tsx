@@ -10,7 +10,7 @@ export default function App() {
     <Router>
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         <Navigation />
-        <main className="pt-20 px-4">
+        <main className="pt-2 px-4">
           <Routes>
             <Route path="/" element={<ExportForm />} />
             <Route path="/verwaltung" element={<VorgangsListe />} />

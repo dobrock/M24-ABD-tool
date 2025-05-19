@@ -103,27 +103,28 @@ export default function App() {
   const [statusMessage, setStatusMessage] = useState('');
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
-        <div className="flex justify-center mb-2">
-          <img src={logo} alt="MOTORSPORT24 Logo" className="h-12 object-contain mb-6" />
-        </div>
-        <h1 className="text-1xl font-bold text-gray-700 text-left mb-8">
-          NEUE AUSFUHRANMELDUNG
-        </h1>
+<div className="min-h-screen bg-gray-50 pt-4 pb-12 px-4 sm:px-6 lg:px-8">
+  <h1 className="text-2xl font-bold text-gray-800 mb-6 max-w-4xl mx-auto pl-10">
+    Neue Ausfuhranmeldung
+  </h1>
+
+  <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
+
 
         {/* Block I: Ware */}
         <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">1. Ware</h2>
-          {items.map((item, index) => (
-            <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-4">
+        <div className="bg-gray-200 px-4 py-2 rounded-md mb-6">
+        <h2 className="text-md font-semibold text-gray-800 tracking-wide">1. Ware</h2>
+        </div>          
+        {items.map((item, index) => (
+            <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-4 pl-3">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700">Warenbezeichnung DE/EN</label>
                 <input
                   type="text"
                   value={item.description}
                   onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                  placeholder="z. B. Bremssattel / brake caliper"
+                  placeholder="z. B. Bremssattel / Brake Caliper"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-red-500 focus:border-red-500"
                 />
               </div>
@@ -154,7 +155,7 @@ export default function App() {
                     type="text"
                     value={item.value}
                     onChange={(e) => handleItemChange(index, 'value', e.target.value)}
-                    placeholder="z. B. 1468"
+                    placeholder="z. B. 4.250"
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
@@ -170,8 +171,10 @@ export default function App() {
 
         {/* Block II: Rechnungsinformationen */}
         <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">2. Rechnungsinformationen</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-gray-200 px-4 py-2 rounded-md mb-6">
+        <h2 className="text-md font-semibold text-gray-800 tracking-wide">2. Rechnungsinformationen</h2>
+        </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pl-3">
             <div className="md:col-span-1">
               <label className="block text-sm font-medium text-gray-700">Rechnungsnummer</label>
               <input
@@ -199,9 +202,11 @@ export default function App() {
 
         {/* Block III: Beladeort */}
         <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">3. Beladeort</h2>
+        <div className="bg-gray-200 px-4 py-2 rounded-md mb-6">
+        <h2 className="text-md font-semibold text-gray-800 tracking-wide">3. Beladeort</h2>
+        </div>
           <div className="md:w-1/2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1 pl-3">
               Ladeort wählen:
             </label>
             <select
@@ -219,8 +224,10 @@ export default function App() {
 
         {/* Block IV: Empfänger */}
         <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">4. Empfänger</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-gray-200 px-4 py-2 rounded-md mb-6">
+        <h2 className="text-md font-semibold text-gray-800 tracking-wide">4. Empfänger</h2>
+        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-3">
             <div>
               <label className="block text-sm font-medium text-gray-700">Name</label>
               <input
@@ -286,9 +293,11 @@ export default function App() {
 
         {/* Block V: Versandweg */}
         <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">5. Versandweg</h2>
+        <div className="bg-gray-200 px-4 py-2 rounded-md mb-6">
+        <h2 className="text-md font-semibold text-gray-800 tracking-wide">5. Versandweg</h2>
+        </div>
           <div className="md:w-1/2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1 pl-3">
               Versandweg wählen:
             </label>
             <select
