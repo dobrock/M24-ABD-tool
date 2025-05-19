@@ -84,12 +84,6 @@ export default function App() {
       setIsSuccess(false);
     }
   };
-  
-      const result = await response.json();
-      console.log('Antwort vom Server:', result);
-    } catch (error) {
-      console.error('Fehler beim automatischen Speichern:', error);
-    }
   };
 
   const [refreshKey, setRefreshKey] = useState(0);
