@@ -85,10 +85,6 @@ export default function App() {
     }
   };
 
-  const [refreshKey, setRefreshKey] = useState(0);
-  // ... in handleSubmit nach erfolgreichem Eintrag:
-  setRefreshKey(prev => prev + 1);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
