@@ -167,7 +167,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* Block III: Beladeort */}
+        {/* Block III: Beladeanschrift */}
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">3. Beladeort</h2>
           <div className="md:w-1/2">
