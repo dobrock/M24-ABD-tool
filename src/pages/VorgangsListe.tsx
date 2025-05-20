@@ -19,6 +19,9 @@ interface Vorgang {
 export default function VorgangsListe() {
   const [vorgaenge, setVorgaenge] = useState<Vorgang[]>([]);
   const navigate = useNavigate();
+  
+  const [editingMrnId, setEditingMrnId] = useState<string | null>(null);
+  const [tempMrn, setTempMrn] = useState<string>('');
 
   const loadVorgaenge = async () => {
     try {
@@ -45,6 +48,20 @@ export default function VorgangsListe() {
       loadVorgaenge();
     } catch (err) {
       console.error('Fehler beim Statuswechsel:', err);
+    }
+  };
+
+  const updateMrn = async (id: string, newMrn: string) => {
+    try {
+      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mrn: newMrn }),
+      });
+      setEditingMrnId(null);
+      loadVorgaenge();
+    } catch (err) {
+      console.error('Fehler beim Aktualisieren der MRN:', err);
     }
   };
 
@@ -85,80 +102,170 @@ export default function VorgangsListe() {
           <table className="min-w-full bg-white table-fixed">
             <thead className="bg-gray-200 text-gray-700">
               <tr>
-                <th className="w-68 text-left px-4 py-2">Empfänger</th>
-                <th className="w-24 text-left px-4 py-2">Zielland</th>
-                <th className="w-40 text-left px-4 py-2">MRN</th>
-                <th className="w-32 text-left px-4 py-2">Erstellt am</th>
-                <th className="w-55 text-left px-4 py-2">Status</th>
-                <th className="w-15 text-center px-4 py-2">Dokumente</th>
-                <th className="w-22 text-right px-4 py-2">Aktion</th>
+                <th className="w-80 text-left px-4 py-2 text-sm">Empfänger</th>
+                <th className="w-24 text-left px-4 py-2 text-sm">Land</th>
+                <th className="w-40 text-left px-4 py-2 text-sm">MRN</th>
+                <th className="w-32 text-left px-4 py-2 text-sm">Erstellt am</th>
+                <th className="w-55 text-left px-4 py-2 text-sm">Status</th>
+                <th className="w-12 text-center px-4 py-2 text-sm">Dokumente</th>
+                <th className="w-20 text-center px-4 py-2 text-sm">Aktion</th>
               </tr>
             </thead>
             <tbody>
               {vorgaenge.map((vorgang) => (
                 <tr key={vorgang.id} className="border-b">
-                  <td className="px-4 py-2">{vorgang.empfaenger}</td>
-                  <td className="px-4 py-2">{vorgang.land}</td>
-                  <td className="px-4 py-2">{vorgang.mrn}</td>
-                  <td className="px-4 py-2">{new Date(vorgang.erstelldatum).toLocaleDateString()}</td>
-                  <td className="px-4 py-2">
+                  <td className="px-4 py-2 text-sm">{vorgang.empfaenger}</td>
+                  <td className="px-4 py-2 text-sm text-center" title={vorgang.land}>
+                    {vorgang.land.length === 2 ? vorgang.land.toUpperCase() : vorgang.land === 'USA' ? 'US' : vorgang.land === 'China' ? 'CN' : vorgang.land === 'Japan' ? 'JP' : vorgang.land.slice(0, 2).toUpperCase()}
+                  </td>
+                  <td className="px-4 py-2 text-sm">
+  {editingMrnId === vorgang.id ? (
+    <input
+      type="text"
+      value={tempMrn}
+      autoFocus
+      onChange={(e) => setTempMrn(e.target.value)}
+      onBlur={() => updateMrn(vorgang.id, tempMrn)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') updateMrn(vorgang.id, tempMrn);
+        if (e.key === 'Escape') setEditingMrnId(null);
+      }}
+      className="w-full border border-gray-300 px-2 py-1 text-sm"
+    />
+  ) : (
+<span
+  className={`cursor-pointer ${vorgang.mrn ? '' : 'text-gray-200'} hover:underline`}
+  title="MRN folgt"
+  onClick={() => {
+    setEditingMrnId(vorgang.id);
+    setTempMrn(vorgang.mrn || '');
+  }}
+>
+  {vorgang.mrn || '—'}
+</span>
+  )}
+</td>
+                  <td className="px-4 py-2 text-sm whitespace-nowrap">{new Date(vorgang.erstelldatum).toLocaleDateString()}</td>
+                  <td className="px-4 py-2 text-sm">
                     {['angelegt', 'ausfuhr_beantragt'].includes(vorgang.status) ? (
                       <span
-                        className="cursor-pointer hover:text-blue-600"
-                        onClick={() => toggleStatus(vorgang)}
-                        title="Klicken, um Status zu wechseln"
-                      >
+                      className="cursor-pointer hover:text-blue-600 whitespace-nowrap"
+                      onClick={() => toggleStatus(vorgang)}
+                      title="Klicken, um Status zu wechseln"
+                    >
                         {statusIcons[vorgang.status]} {statusLabels[vorgang.status]}
                       </span>
                     ) : (
                       <span>{statusIcons[vorgang.status]} {statusLabels[vorgang.status]}</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-xl whitespace-nowrap text-center">
-                    {vorgang.hasPdf && (
-                      <a
-                        href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/pdf`}
-                        title="PDF herunterladen"
-                        className="mr-2"
-                        style={{ fontSize: '75%' }}
-                      >📄</a>
-                    )}
-                    {vorgang.hasInvoice && (
+                  <td className="px-4 py-2 w-12 text-center text-lg transition-colors duration-150 whitespace-nowrap">
+                    {/* 1. Atlas PDF */}
+                    <a
+                      href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/pdf`}
+                      title="Daten für die Ausfuhr herunterladen"
+                      className="mr-2 hover:text-blue-600"
+                    >
+                      <img
+                        src="/icons/dokument-100.png"
+                        className="inline h-[20px] hover:scale-110 transition-transform duration-150 hover:content-[url('/icons/dokument-100.png')]"
+                        alt="Atlas PDF"
+                      />
+                    </a>
+
+                    {/* 2. Handelsrechnung */}
+                    {vorgang.hasInvoice ? (
                       <a
                         href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/rechnung`}
-                        title="Rechnung herunterladen"
-                        className="mr-2"
-                        style={{ fontSize: '75%' }}
-                      >📄</a>
+                        title="Handelsrechnung herunterladen"
+                        className="mr-2 hover:text-blue-600"
+                      >
+                        <img
+                          src="/icons/dokument-25.png"
+                          className="inline h-[20px] cursor-pointer hover:scale-110 transition-transform duration-150 hover:content-[url('/icons/dokument-100.png')]"
+                          alt="Rechnung"
+                        />
+                      </a>
+                    ) : (
+                      <span className="mr-2" title="Keine Rechnung vorhanden">
+                        <img
+                          src="/icons/sanduhr-leer-25.png"
+                          className="inline h-[20px] hover:scale-110 transition-transform duration-150 hover:content-[url('/icons/sanduhr-leer-100.png')]"
+                          alt="Keine Rechnung"
+                        />
+                      </span>
                     )}
+
+                    {/* 3. ABD/AGV */}
                     {vorgang.hasAgv ? (
                       <a
                         href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/agv`}
-                        title="AGV herunterladen"
-                        style={{ fontSize: '75%' }}
-                      >📄</a>
+                        title="Ausgangsvermerk herunterladen"
+                        className="hover:text-blue-600"
+                      >
+                        <img
+                          src="/icons/dokument-25.png"
+                          className="inline h-[20px] cursor-pointer hover:scale-110 transition-transform duration-150 hover:content-[url('/icons/dokument-100.png')]"
+                          alt="AGV"
+                        />
+                      </a>
                     ) : vorgang.hasAbd ? (
                       <a
                         href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/abd`}
-                        title="ABD herunterladen"
-                        style={{ fontSize: '75%' }}
-                      >📄</a>
-                    ) : null}
+                        title="Ausfuhrbegleitdokument herunterladen"
+                        className="hover:text-blue-600"
+                      >
+                        <img
+                          src="/icons/dokument-25.png"
+                          className="inline h-[20px] cursor-pointer hover:scale-110 transition-transform duration-150 hover:content-[url('/icons/dokument-100.png')]"
+                          alt="ABD"
+                        />
+                      </a>
+                    ) : (
+                      <span title="Kein ABD vorhanden">
+                        <img
+                          src="/icons/sanduhr-voll-25.png"
+                          className="inline h-[20px] hover:scale-110 transition-transform duration-150 hover:content-[url('/icons/sanduhr-voll-100.png')]"
+                          alt="Kein ABD"
+                        />
+                      </span>
+                    )}
                   </td>
-                  <td className="px-4 py-2">
-                    <div className="flex justify-end items-center space-x-2">
-                      <button
-                        onClick={() => navigate(`/vorgaenge/${vorgang.id}`)}
-                        title="Bearbeiten"
-                        style={{ fontSize: '75%' }}
-                      >✏️</button>
-                      <button
-                        onClick={() => handleDelete(vorgang.id)}
-                        title="Löschen"
-                        style={{ fontSize: '75%' }}
-                      >❌</button>
-                    </div>
-                  </td>
+  <td className="px-4 py-2 text-center text-sm">
+    <div className="flex justify-center items-center gap-1 text-xs transition-colors duration-150">
+      <img
+        src={`/icons/stift-bunt-50.png`}
+        onMouseEnter={(e) => (e.currentTarget.src = '/icons/stift-bunt-100.png')}
+        onMouseLeave={(e) => (e.currentTarget.src = '/icons/stift-bunt-50.png')}
+        className="h-[18px] cursor-pointer transition-transform duration-150 hover:scale-110"
+        alt="Bearbeiten"
+        title="Bearbeiten"
+        onClick={() => navigate(`/vorgaenge/${vorgang.id}`)}
+      />
+      <img
+        src={`/icons/kreuz-rot-50.png`}
+        onMouseEnter={(e) => (e.currentTarget.src = '/icons/kreuz-rot-100.png')}
+        onMouseLeave={(e) => (e.currentTarget.src = '/icons/kreuz-rot-50.png')}
+        className="h-[18px] cursor-pointer transition-transform duration-150 hover:scale-110"
+        alt="Löschen"
+        title="Löschen"
+        onClick={() => handleDelete(vorgang.id)}
+      />
+      <img
+        src={`/icons/haken-gruen-50.png`}
+        onMouseEnter={(e) => (e.currentTarget.src = '/icons/haken-gruen-100.png')}
+        onMouseLeave={(e) => (e.currentTarget.src = '/icons/haken-gruen-50.png')}
+        className="h-[18px] cursor-pointer transition-transform duration-150 hover:scale-110"
+        alt="Archivieren"
+        title="Archivieren"
+        onClick={() => {
+          if (window.confirm('Vorgang als erledigt archivieren?')) {
+            alert('✅ Vorgang archiviert (Platzhalter)');
+          }
+        }}
+      />
+    </div>
+  </td>
                 </tr>
               ))}
             </tbody>
