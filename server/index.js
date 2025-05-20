@@ -117,6 +117,18 @@ app.get('/api/download/:id', async (req, res) => {
   }
 });
 
+// Einzelne Vorgänge löschen
+app.delete('/api/vorgaenge/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM vorgaenge WHERE id = $1', [id]);
+    res.status(204).send(); // wichtig: kein JSON
+  } catch (err) {
+    console.error('Fehler beim Löschen:', err);
+    res.status(500).json({ error: 'Fehler beim Löschen' });
+  }
+});
+
 // Fallback für alle anderen Routen
 app.use((req, res) => {
   res.status(404).send('Route nicht gefunden');

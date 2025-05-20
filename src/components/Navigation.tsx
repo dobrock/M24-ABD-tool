@@ -25,12 +25,14 @@ export default function Navigation() {
         <div className="hidden md:flex gap-4">
           <Link to="/" className={linkClasses('/')}>Formular</Link>
           <Link to="/verwaltung" className={linkClasses('/verwaltung')}>Vorgänge</Link>
+          <Link to="/sicherung" className={linkClasses('/sicherung')}>Sicherung</Link>
         </div>
       </div>
       {open && (
         <div className="md:hidden px-4 pb-4 flex flex-col gap-2">
           <Link to="/" className={linkClasses('/')} onClick={() => setOpen(false)}>Formular</Link>
           <Link to="/verwaltung" className={linkClasses('/verwaltung')} onClick={() => setOpen(false)}>Vorgänge</Link>
+          <Link to="/sicherung" className={linkClasses('/sicherung')} onClick={() => setOpen(false)}>Sicherung</Link>
         </div>
       )}
     </nav>
