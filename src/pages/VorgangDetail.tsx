@@ -14,6 +14,7 @@ export default function VorgangDetail() {
       const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`);
       if (res.ok) {
         const data = await res.json();
+        console.log('📦 Daten vom Server:', data);
         setVorgang(data);
       } else {
         alert('Vorgang nicht gefunden');
