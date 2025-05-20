@@ -77,6 +77,19 @@ app.get('/api/vorgaenge/:id', async (req, res) => {
   }
 });
 
+// Status eines Vorgangs ändern
+app.patch('/api/vorgaenge/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    await pool.query(`UPDATE vorgaenge SET status = $1 WHERE id = $2`, [status, id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Fehler beim Status-Update:', err);
+    res.status(500).send(err.message);
+  }
+});
+
 // Download Vorgang (Platzhalter PDF)
 app.get('/api/download/:id', async (req, res) => {
   try {
