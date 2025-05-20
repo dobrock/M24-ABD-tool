@@ -7,10 +7,11 @@ export default function VorgangDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [vorgang, setVorgang] = useState<any>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   const loadVorgang = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/vorgang/${id}`);
+      const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`);
       if (res.ok) {
         const data = await res.json();
         setVorgang(data);
@@ -81,84 +82,158 @@ export default function VorgangDetail() {
     }
   };
 
-  const uploadForm = (type: string, label: string) => (
-    <form
-      onSubmit={async (e) => {
-        e.preventDefault();
-        const fileInput = (e.target as any).elements.file;
-        if (!fileInput.files.length) return alert('Bitte eine Datei wählen.');
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
-        const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}/upload/${type}`, {
-          method: 'POST',
-          body: formData,
-        });
-        if (res.ok) {
-          alert(`${label} erfolgreich hochgeladen`);
-          loadVorgang();
-        } else {
-          alert(`Fehler beim Hochladen ${label}`);
-        }
-      }}
-      className="flex items-center gap-2 mb-2"
-    >
-      <input type="file" name="file" className="border rounded p-1" />
-      <button type="submit" className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">
-        📤 {label} hochladen
-      </button>
-    </form>
-  );
-
   if (!vorgang) return <p>Vorgang wird geladen...</p>;
 
   return (
-    <div className="p-8 max-w-2xl mx-auto bg-white shadow-md rounded-lg">
-      <h1 className="text-2xl font-bold mb-4">Details Vorgang</h1>
+    <div className="min-h-screen bg-gray-50 pt-4 pb-12 px-4 sm:px-6 lg:px-8">
+      <h1 className="text-2xl font-bold text-gray-800 mb-6 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        Vorgang Zusammenfassung
+      </h1>
+      <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
 
-      <div className="space-y-4">
-        <div><strong>Empfänger:</strong> {vorgang.empfaenger}</div>
-        <div><strong>Zielland:</strong> {vorgang.land}</div>
-        <div><strong>MRN:</strong> {vorgang.mrn}</div>
-        <div><strong>Erstellt am:</strong> {new Date(vorgang.erstelldatum).toLocaleDateString()}</div>
-        <div><strong>Status:</strong> {statusDarstellung(vorgang.status)}</div>
-      </div>
+        <div className="flex justify-between items-center mb-4 px-6">
+          <div className="text-lg font-semibold text-gray-800">
+            MOTORSPORT24-GmbH_{new Date(vorgang.erstelldatum).toISOString().slice(2, 10).replace(/-/g, '-')}_{vorgang.invoiceNumber || '–'}
+          </div>
+          <div className="text-sm font-medium text-gray-800">
+            <strong>Status:</strong> {statusDarstellung(vorgang.status)}
+          </div>
+        </div>
 
-      <h2 className="text-xl font-bold mt-6 mb-2">Dokumente</h2>
-      <div className="flex gap-4 text-xl mb-4">
-        {vorgang.hasPdf && (
-          <a href={`${API_BASE_URL}/api/vorgaenge/${id}/download/pdf`} title="PDF herunterladen" download style={{ fontSize: '75%' }}>📄</a>
-        )}
-        {vorgang.hasInvoice && (
-          <a href={`${API_BASE_URL}/api/vorgaenge/${id}/download/rechnung`} title="Rechnung herunterladen" download style={{ fontSize: '75%' }}>📄</a>
-        )}
-        {vorgang.hasAgv ? (
-          <a href={`${API_BASE_URL}/api/vorgaenge/${id}/download/agv`} title="AGV herunterladen" download style={{ fontSize: '75%' }}>📄</a>
-        ) : vorgang.hasAbd ? (
-          <a href={`${API_BASE_URL}/api/vorgaenge/${id}/download/abd`} title="ABD herunterladen" download style={{ fontSize: '75%' }}>📄</a>
-        ) : null}
-      </div>
+        <div className="bg-gray-100 text-gray-800 rounded-t-xl px-6 py-3 grid grid-cols-3 text-sm font-semibold">
+          <div>Ausführer</div>
+          <div>Empfänger</div>
+          <div>Empfängerland</div>
+        </div>
+        <div className="grid grid-cols-3 px-6 py-2 border-b border-gray-100 mt-6">
+          <div>MOTORSPORT24 GmbH</div>
+          <div>{vorgang.recipient?.name || '–'}</div>
+          <div>{vorgang.recipient?.country || '–'}</div>
+        </div>
 
-      <h2 className="text-xl font-bold mt-6 mb-2">Dokumente hochladen</h2>
-      {uploadForm('pdf', 'PDF')}
-      {uploadForm('rechnung', 'Rechnung')}
-      {uploadForm('abd', 'ABD')}
-      {uploadForm('agv', 'AGV')}
+        <div className="bg-gray-100 text-gray-800 px-6 py-3 grid grid-cols-10 text-sm font-semibold mt-6">
+          <div className="col-span-5">Warenbezeichnung</div>
+          <div className="col-span-2">Tarifnummer</div>
+          <div className="col-span-1">Gewicht</div>
+          <div className="col-span-2">Warenwert</div>
+        </div>
+        <div className="px-6 py-2 grid grid-cols-10 border-b border-gray-100 text-sm">
+          <div className="col-span-5">{vorgang.items?.[0]?.description || '–'}</div>
+          <div className="col-span-2">{vorgang.items?.[0]?.tariff || '–'}</div>
+          <div className="col-span-1">{vorgang.items?.[0]?.weight || '–'} kg</div>
+          <div className="col-span-2">{vorgang.items?.[0]?.value || '–'} €</div>
+        </div>
 
-      <div className="flex gap-4 mt-8 justify-end">
-        <button
-          onClick={() => alert('Bearbeiten (Demo)')}
-          className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded"
-          title="Bearbeiten"
+        <div className="bg-gray-100 text-gray-800 px-6 py-3 text-sm cursor-pointer select-none rounded-b-xl mt-6" onClick={() => setShowDetails(!showDetails)}>
+          + weitere Daten ansehen
+        </div>
+        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showDetails ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700 px-6 pt-4 pb-6 font-semibold">
+            <div><strong>Rechnungsnummer:</strong> {vorgang.invoiceNumber || '–'}</div>
+            <div><strong>Rechnungsbetrag:</strong> {vorgang.invoiceTotal || '–'} €</div>
+            <div><strong>Beladeort:</strong> {vorgang.loadingPlace || '–'}</div>
+            <div><strong>Versandweg:</strong> {vorgang.shippingMethod || '–'}</div>
+            <div><strong>Empfängeradresse:</strong> {vorgang.recipient?.street || '–'}, {vorgang.recipient?.zip || ''} {vorgang.recipient?.city || ''}</div>
+            <div><strong>Empfängerland:</strong> {vorgang.recipient?.country || '–'}</div>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1 px-6 mt-6">MRN</label>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const mrn = formData.get('mrn');
+              const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mrn }),
+              });
+              if (res.ok) {
+                loadVorgang();
+              } else {
+                alert('Fehler beim Speichern der MRN');
+              }
+            }}
+            className="flex gap-2 mt-10 mb-8 px-6"
+          >
+            <input
+              type="text"
+              name="mrn"
+              defaultValue={vorgang.mrn}
+              className="w-1/2 border rounded px-3 py-2"
+            />
+            <button type="submit" className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded shadow">
+              💾
+            </button>
+          </form>
+        </div>
+
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            if (!formData.get('file')) return alert('Bitte eine Datei auswählen');
+            const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}/upload/generic`, {
+              method: 'POST',
+              body: formData,
+            });
+            if (res.ok) {
+              alert('Datei erfolgreich hochgeladen');
+              loadVorgang();
+            } else {
+              alert('Fehler beim Hochladen');
+            }
+          }}
+          className="flex items-end gap-4 mb-8 px-6"
         >
-          ✏️ Bearbeiten
-        </button>
-        <button
-          onClick={handleDelete}
-          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-          title="Löschen"
-        >
-          ❌ Löschen
-        </button>
+          <div>
+            <label className="block text-sm font-medium mb-1">Dateityp</label>
+            <select name="label" className="border rounded px-2 py-2">
+              <option disabled selected value="">Bitte auswählen</option>
+              <option>Handelsrechnung</option>
+              <option>Ausfuhrbegleitdokument</option>
+              <option>Ausgangsvermerk</option>
+            </select>
+          </div>
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <img src="/icons/ordner.png" className="h-6" />
+              <span className="text-sm text-gray-700">Datei auswählen</span>
+              <input type="file" name="file" className="hidden" />
+            </label>
+          </div>
+          <button type="submit" className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded shadow">
+            💾
+          </button>
+          <div className="flex items-center justify-center gap-4 pt-4">
+            <img src="/icons/dokument-100.png" className="h-8" />
+            <img src="/icons/sanduhr-leer-25.png" className="h-8" />
+            <img src="/icons/sanduhr-voll-25.png" className="h-8" />
+          </div>
+        </form>
+
+        <div className="px-6 mb-6">
+          <strong>Notizen:</strong> {vorgang.notizen || '–'}
+        </div>
+
+        <div className="flex gap-4 mt-8 justify-end px-6">
+          <button
+            onClick={handleDelete}
+            className="bg-white hover:bg-red-100 text-red-600 px-4 py-2 rounded border border-red-300"
+            title="Löschen"
+          >
+            ❌ Löschen
+          </button>
+          <button
+            onClick={() => alert('✅ Vorgang archiviert')}
+            className="bg-green-100 hover:bg-green-200 text-green-800 px-4 py-2 rounded border border-green-300"
+            title="Archivieren"
+          >
+            ✅ Archivieren
+          </button>
+        </div>
       </div>
     </div>
   );
