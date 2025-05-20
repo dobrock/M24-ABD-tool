@@ -90,6 +90,19 @@ app.patch('/api/vorgaenge/:id/status', async (req, res) => {
   }
 });
 
+// MRN aktualisieren
+app.patch('/api/vorgaenge/:id', async (req, res) => {
+  const { id } = req.params;
+  const { mrn } = req.body;
+  try {
+    await pool.query(`UPDATE vorgaenge SET mrn = $1 WHERE id = $2`, [mrn, id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Fehler beim Aktualisieren der MRN:', err);
+    res.status(500).send(err.message);
+  }
+});
+
 // Download Vorgang (Platzhalter PDF)
 app.get('/api/download/:id', async (req, res) => {
   try {
