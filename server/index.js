@@ -3,6 +3,8 @@ const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const { Pool } = require('pg');
 const app = express();
+const multer = require('multer');
+const upload = multer(); // Speicher im RAM (kann später angepasst werden)
 
 require('dotenv').config({ path: '.env.local' }); // explizit sicherstellen
 console.log('📦 Verbinde mit PG:', process.env.PG_CONNECTION);
@@ -38,16 +40,28 @@ const initDB = async () => {
 };
 
 // Vorgang anlegen
-app.post('/api/vorgaenge', async (req, res) => {
+app.post('/api/vorgaenge', upload.single('pdf'), async (req, res) => {
   const id = uuidv4();
-  const { mrn, empfaenger, land, waren, status, notizen } = req.body;
+
   try {
+    const parsedData = JSON.parse(req.body.data);
+    const { invoiceNumber, recipient, items, createdAt, fileName, status, notizen } = parsedData;
+
+    const waren = items.map(item => item.description).join(', ');
+    const empfaenger = recipient?.name || '';
+    const land = recipient?.country || '';
+    const mrn = invoiceNumber;
+
+    // Optional: PDF abspeichern (z. B. später in FS oder Cloud)
+
     await pool.query(
       `INSERT INTO vorgaenge (id, erstelldatum, mrn, empfaenger, land, waren, status, notizen)
        VALUES ($1, NOW(), $2, $3, $4, $5, $6, $7)`,
-      [id, mrn, empfaenger, land, waren, status || 'offen', notizen || '']
+      [id, mrn, empfaenger, land, waren, status || 'angelegt', notizen || '']
     );
+
     res.json({ success: true, id });
+
   } catch (err) {
     console.error('❌ Fehler beim Anlegen des Vorgangs:', err);
     res.status(500).send(err.message);

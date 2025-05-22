@@ -6,6 +6,12 @@ import VorgangsTest from '../components/VorgangsTest';
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 console.log('🧪 API_BASE_URL:', API_BASE_URL);
 
+function generateFileName(shipper: string, createdAt: string, invoiceNumber: string): string {
+  const formattedDate = new Date(createdAt).toISOString().split('T')[0].replace(/-/g, '-').slice(2); // yy-mm-dd
+  const safeShipper = shipper.replace(/\s+/g, '-');
+  return `${safeShipper}_${formattedDate}_${invoiceNumber}`;
+}
+
 export default function App() {
   const [items, setItems] = useState([
     { description: '', tariff: '', weight: '', value: '' }
@@ -57,40 +63,62 @@ export default function App() {
     setIsSuccess(false);
     setStatusMessage('');
   
-    generatePDF({ ...formData, items });
-  
     try {
+      const createdAt = new Date().toISOString();
+      const shipper = 'MOTORSPORT24-GmbH';
+      const invoiceNumber = formData.invoiceNumber;
+  
+      const fileName = generateFileName(shipper, createdAt, invoiceNumber);
+  
+      // 📄 PDF generieren
+      const pdfBlob = await generatePDF({ ...formData, items });
+      const pdfFile = new File([pdfBlob], `${fileName}.pdf`, { type: 'application/pdf' });
+  
+      // 📤 FormData für Upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('data', JSON.stringify({
+        ...formData,
+        items,
+        createdAt,
+        fileName,
+        status: 'angelegt',
+        notizen: 'Automatisch generiert',
+      }));
+      formDataToSend.append('pdf', pdfFile);
+  
+      // 📨 Request an Backend
       const response = await fetch(`${API_BASE_URL}/api/vorgaenge`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mrn: formData.invoiceNumber,
-          empfaenger: formData.recipient.name,
-          land: formData.recipient.country,
-          waren: items.map(i => i.description).join(', '),
-          status: 'angelegt',
-          notizen: 'Automatisch generiert'
-        })
+        body: formDataToSend,
       });
   
-      const result = await response.json();
-      console.log('Antwort vom Server:', result);
+      if (!response.ok) {
+        throw new Error(`Fehler vom Server: ${response.status}`);
+      }
   
+      const result = await response.json();
+      console.log('✅ Antwort vom Server:', result);
+  
+      // 💾 PDF lokal speichern
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(pdfBlob);
+      downloadLink.download = `${fileName}.pdf`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+  
+      // ✅ Erfolgsmeldung
       setIsSubmitting(false);
       setIsSuccess(true);
       setStatusMessage('✅ Eintrag gespeichert – du wirst zur Übersicht weitergeleitet ...');
   
-      setRefreshKey(prev => prev + 1);
-  
-      // Sanfte Weiterleitung zur Übersicht
+      // ⏩ Weiterleitung zur Übersicht
       setTimeout(() => {
-        const overview = document.getElementById('vorgangsliste');
-        if (overview) {
-          overview.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 500);
+        window.location.href = '/vorgaenge';
+      }, 1500);
+  
     } catch (error) {
-      console.error('Fehler beim automatischen Speichern:', error);
+      console.error('❌ Fehler beim Speichern:', error);
       setIsSubmitting(false);
       setIsSuccess(false);
       setStatusMessage('❌ Fehler beim Speichern. Bitte später erneut versuchen.');
