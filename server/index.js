@@ -9,6 +9,9 @@ const upload = multer(); // Speicher im RAM (kann später angepasst werden)
 require('dotenv').config({ path: '.env.local' }); // explizit sicherstellen
 console.log('📦 Verbinde mit PG:', process.env.PG_CONNECTION);
 
+console.log('📨 Daten empfangen:', req.body);
+console.log('📨 data-Feld:', req.body.data);
+
 app.use(cors());
 app.use(express.json());
 
@@ -40,12 +43,23 @@ const initDB = async () => {
 };
 
 // Vorgang anlegen
-app.post('/api/vorgaenge', upload.single('pdf'), async (req, res) => {
+app.post('/api/vorgaenge', upload.any(), async (req, res) => {
+  console.log('📨 Daten empfangen:', req.body);
+
   const id = uuidv4();
 
   try {
-    const parsedData = JSON.parse(req.body.data);
-    const { invoiceNumber, recipient, items, createdAt, fileName, status, notizen } = parsedData;
+    let parsedData = {};
+try {
+  parsedData = JSON.parse(req.body.data);
+  console.log('✅ parsedData erfolgreich geparst:', parsedData);
+} catch (err) {
+  console.error('❌ Fehler beim Parsen von req.body.data:', err.message);
+  parsedData = {}; // Sicherung
+}
+
+const { invoiceNumber, recipient, items, createdAt, fileName, status, notizen } = parsedData;
+
 
     const waren = items.map(item => item.description).join(', ');
     const empfaenger = recipient?.name || '';
@@ -55,10 +69,22 @@ app.post('/api/vorgaenge', upload.single('pdf'), async (req, res) => {
     // Optional: PDF abspeichern (z. B. später in FS oder Cloud)
 
     await pool.query(
-      `INSERT INTO vorgaenge (id, erstelldatum, mrn, empfaenger, land, waren, status, notizen)
-       VALUES ($1, NOW(), $2, $3, $4, $5, $6, $7)`,
-      [id, mrn, empfaenger, land, waren, status || 'angelegt', notizen || '']
-    );
+      `INSERT INTO vorgaenge (
+        id, erstelldatum, mrn, empfaenger, land, waren, status, notizen, formdata
+      ) VALUES (
+        $1, NOW(), $2, $3, $4, $5, $6, $7, $8
+      )`,
+      [
+        id,
+        mrn,
+        empfaenger,
+        land,
+        waren,
+        status || 'angelegt',
+        notizen || '',
+        parsedData // Das ist das vollständige JSON aus dem Formular
+      ]
+    );    
 
     res.json({ success: true, id });
 

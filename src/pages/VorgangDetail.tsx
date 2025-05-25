@@ -15,6 +15,7 @@ export default function VorgangDetail() {
       if (res.ok) {
         const data = await res.json();
         console.log('📦 Daten vom Server:', data);
+        console.log("📦 Full Vorgang:", data);
         setVorgang(data);
       } else {
         alert('Vorgang nicht gefunden');
@@ -90,6 +91,14 @@ export default function VorgangDetail() {
       <h1 className="text-2xl font-bold text-gray-800 mb-6 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         Vorgang Zusammenfassung
       </h1>
+
+      <div className="bg-gray-100 border rounded p-4 mb-6 overflow-auto">
+  <h3 className="text-sm font-semibold mb-2">📦 Vollständiger Vorgangsdatensatz (Rohdaten)</h3>
+  <pre className="text-xs whitespace-pre-wrap">
+    {JSON.stringify(vorgang, null, 2)}
+  </pre>
+</div>
+
       <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
 
         <div className="flex justify-between items-center mb-4 px-6">
@@ -170,6 +179,22 @@ export default function VorgangDetail() {
             </button>
           </form>
         </div>
+
+        <div className="mb-6 px-6">
+  <h4 className="text-sm font-semibold mb-2">Warenpositionen</h4>
+  {Array.isArray(vorgang.items) && vorgang.items.length > 0 ? (
+    vorgang.items.map((item, index) => (
+      <div key={index} className="border p-3 mb-2 rounded bg-gray-50">
+        <div><strong>{index + 1}. {item.description || '–'}</strong></div>
+        <div>Tarifnummer: {item.tariff || '–'}</div>
+        <div>Gewicht: {item.weight || '–'} kg</div>
+        <div>Warenwert: {item.value || '–'} €</div>
+      </div>
+    ))
+  ) : (
+    <p className="text-gray-500">Keine Positionen vorhanden.</p>
+  )}
+</div>
 
         <form
           onSubmit={async (e) => {
