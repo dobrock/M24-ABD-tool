@@ -9,9 +9,6 @@ const upload = multer(); // Speicher im RAM (kann später angepasst werden)
 require('dotenv').config({ path: '.env.local' }); // explizit sicherstellen
 console.log('📦 Verbinde mit PG:', process.env.PG_CONNECTION);
 
-console.log('📨 Daten empfangen:', req.body);
-console.log('📨 data-Feld:', req.body.data);
-
 app.use(cors());
 app.use(express.json());
 
