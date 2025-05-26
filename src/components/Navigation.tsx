@@ -1,5 +1,3 @@
-// Navigation mit Flyout-Menüpunkt "Sicherung"
-
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
@@ -10,6 +8,7 @@ export default function Navigation() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [showFlyout, setShowFlyout] = useState(false);
+  const [flyoutTimeout, setFlyoutTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const linkClasses = (path: string) =>
     `block px-4 py-2 rounded ${
@@ -20,13 +19,31 @@ export default function Navigation() {
 
   const startBackup = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/backup`, { method: "POST" });
-      if (!res.ok) throw new Error("Backup fehlgeschlagen");
-      alert("✅ Backup wurde gestartet – Datei wird vorbereitet.");
+      const res = await fetch(`${API_BASE_URL}/api/backup`, { method: 'POST' });
+      if (!res.ok) throw new Error('Backup fehlgeschlagen');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_m24_abd_${new Date().toISOString().slice(0, 10).replace(/-/g, '_')}.dump`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      alert("❌ Fehler beim Backup");
+      alert('❌ Fehler beim Backup');
       console.error(err);
     }
+  };
+
+  const handleMouseEnter = () => {
+    if (flyoutTimeout) clearTimeout(flyoutTimeout);
+    setShowFlyout(true);
+  };
+
+  const handleMouseLeave = () => {
+    const timeout = setTimeout(() => setShowFlyout(false), 300);
+    setFlyoutTimeout(timeout);
   };
 
   return (
@@ -41,15 +58,15 @@ export default function Navigation() {
           <Link to="/verwaltung" className={linkClasses('/verwaltung')}>Vorgänge</Link>
           <div
             className="relative"
-            onMouseEnter={() => setShowFlyout(true)}
-            onMouseLeave={() => setShowFlyout(false)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           >
-            <button className="px-4 py-2 hover:bg-gray-700 rounded">Sicherung ▾</button>
+            <button className="px-4 py-2 hover:bg-gray-700 rounded">Sicherung</button>
             {showFlyout && (
-              <div className="absolute top-full left-0 mt-1 bg-white text-gray-900 shadow rounded z-50 w-48 text-sm">
+              <div className="absolute top-full left-0 mt-1 bg-white text-gray-900 shadow rounded-lg z-50 w-48 text-sm transition-opacity duration-300 opacity-100">
                 <button
                   onClick={startBackup}
-                  className="block px-4 py-2 w-full text-left hover:bg-gray-200"
+                  className="block px-4 py-2 w-full text-left bg-gray-100 hover:bg-gray-200 rounded-lg"
                 >
                   Manuelles Backup
                 </button>
