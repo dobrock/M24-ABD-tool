@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://m24-abd-api-backend.onrender.com';
+
 export default function Navigation() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -18,7 +20,7 @@ export default function Navigation() {
 
   const startBackup = async () => {
     try {
-      const res = await fetch("/api/backup", { method: "POST" });
+      const res = await fetch(`${API_BASE_URL}/api/backup`, { method: "POST" });
       if (!res.ok) throw new Error("Backup fehlgeschlagen");
       alert("✅ Backup wurde gestartet – Datei wird vorbereitet.");
     } catch (err) {
@@ -44,7 +46,7 @@ export default function Navigation() {
           >
             <button className="px-4 py-2 hover:bg-gray-700 rounded">Sicherung ▾</button>
             {showFlyout && (
-              <div className="absolute top-full left-0 mt-1 bg-white text-gray-900 shadow rounded z-50">
+              <div className="absolute top-full left-0 mt-1 bg-white text-gray-900 shadow rounded z-50 w-48 text-sm">
                 <button
                   onClick={startBackup}
                   className="block px-4 py-2 w-full text-left hover:bg-gray-200"
@@ -61,7 +63,7 @@ export default function Navigation() {
         <div className="md:hidden px-4 pb-4 flex flex-col gap-2">
           <Link to="/" className={linkClasses('/')} onClick={() => setOpen(false)}>Formular</Link>
           <Link to="/verwaltung" className={linkClasses('/verwaltung')} onClick={() => setOpen(false)}>Vorgänge</Link>
-          <button onClick={startBackup} className="text-left hover:bg-gray-700 px-4 py-2 rounded">
+          <button onClick={startBackup} className="text-left hover:bg-gray-700 px-4 py-2 rounded text-sm">
             Sicherung: Manuelles Backup
           </button>
         </div>
