@@ -115,35 +115,37 @@ export default function VorgangsListe() {
             <tbody>
               {vorgaenge.map((vorgang) => (
                 <tr key={vorgang.id} className="border-b">
-                  <td className="px-4 py-2 text-sm">{vorgang.empfaenger}</td>
+                  <td className="px-4 py-2 text-sm">
+  {vorgang.formdata?.recipient?.name || '–'}
+</td>
                   <td className="px-4 py-2 text-sm text-center align-middle tracking-wider leading-relaxed">
-                    <Tooltip.Provider delayDuration={200}>
-                      <Tooltip.Root>
-                        <Tooltip.Trigger asChild>
-                          <span className="inline-block w-full text-center">
-                            {vorgang.land.length === 2
-                              ? vorgang.land.toUpperCase()
-                              : vorgang.land === 'USA'
-                              ? 'US'
-                              : vorgang.land === 'China'
-                              ? 'CN'
-                              : vorgang.land === 'Japan'
-                              ? 'JP'
-                              : vorgang.land.slice(0, 2).toUpperCase()}
-                          </span>
-                        </Tooltip.Trigger>
-                        <Tooltip.Portal>
-                          <Tooltip.Content
-                            className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-                            sideOffset={5}
-                          >
-                            {vorgang.land}
-                            <Tooltip.Arrow className="fill-gray-300" />
-                          </Tooltip.Content>
-                        </Tooltip.Portal>
-                      </Tooltip.Root>
-                    </Tooltip.Provider>
-                  </td>
+  <Tooltip.Provider delayDuration={200}>
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>
+        <span className="inline-block w-full text-center">
+          {(() => {
+            const land = vorgang.formdata?.recipient?.country || '';
+            if (land.length === 2) return land.toUpperCase();
+            if (land === 'USA') return 'US';
+            if (land === 'China') return 'CN';
+            if (land === 'Japan') return 'JP';
+            return land.slice(0, 2).toUpperCase();
+          })()}
+        </span>
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content
+          className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
+          sideOffset={5}
+        >
+          {vorgang.formdata?.recipient?.country || 'Unbekannt'}
+          <Tooltip.Arrow className="fill-gray-300" />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  </Tooltip.Provider>
+</td>
+
                   <td className="px-4 py-2 text-sm">
   {editingMrnId === vorgang.id ? (
     <input

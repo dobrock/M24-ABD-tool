@@ -117,7 +117,7 @@ export default function VorgangDetail() {
         </div>
         <div className="grid grid-cols-3 px-6 py-2 border-b border-gray-100 mt-6">
           <div>MOTORSPORT24 GmbH</div>
-          <div>{vorgang.recipient?.name || '–'}</div>
+          <div>{vorgang.formdata?.recipient?.name || '–'}</div>
           <div>{vorgang.recipient?.country || '–'}</div>
         </div>
 
@@ -128,7 +128,7 @@ export default function VorgangDetail() {
           <div className="col-span-2">Warenwert</div>
         </div>
         <div className="px-6 py-2 grid grid-cols-10 border-b border-gray-100 text-sm">
-          <div className="col-span-5">{vorgang.items?.[0]?.description || '–'}</div>
+          <div className="col-span-5">{vorgang.formdata?.items?.[0]?.description || '–'}          </div>
           <div className="col-span-2">{vorgang.items?.[0]?.tariff || '–'}</div>
           <div className="col-span-1">{vorgang.items?.[0]?.weight || '–'} kg</div>
           <div className="col-span-2">{vorgang.items?.[0]?.value || '–'} €</div>
@@ -139,12 +139,12 @@ export default function VorgangDetail() {
         </div>
         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showDetails ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700 px-6 pt-4 pb-6 font-semibold">
-            <div><strong>Rechnungsnummer:</strong> {vorgang.invoiceNumber || '–'}</div>
-            <div><strong>Rechnungsbetrag:</strong> {vorgang.invoiceTotal || '–'} €</div>
-            <div><strong>Beladeort:</strong> {vorgang.loadingPlace || '–'}</div>
-            <div><strong>Versandweg:</strong> {vorgang.shippingMethod || '–'}</div>
-            <div><strong>Empfängeradresse:</strong> {vorgang.recipient?.street || '–'}, {vorgang.recipient?.zip || ''} {vorgang.recipient?.city || ''}</div>
-            <div><strong>Empfängerland:</strong> {vorgang.recipient?.country || '–'}</div>
+            <div><strong>Rechnungsnummer:</strong> {vorgang.formdata?.invoiceNumber || '–'}</div>
+            <div><strong>Rechnungsbetrag:</strong> {vorgang.formdata?.invoiceTotal || '–'} €</div>
+            <div><strong>Beladeort:</strong> {vorgang.formdata?.loadingPlace || '–'}</div>
+            <div><strong>Versandweg:</strong> {vorgang.formdata?.shippingMethod || '–'}</div>
+            <div><strong>Empfängeradresse:</strong> {vorgang.formdata?.recipient?.street || '–'}, {vorgang.formdata?.recipient?.zip || ''} {vorgang.formdata?.recipient?.city || ''}</div>
+            <div><strong>Empfängerland:</strong> {vorgang.formdata?.recipient?.country || '–'}</div>
           </div>
         </div>
 
@@ -182,8 +182,8 @@ export default function VorgangDetail() {
 
         <div className="mb-6 px-6">
   <h4 className="text-sm font-semibold mb-2">Warenpositionen</h4>
-  {Array.isArray(vorgang.items) && vorgang.items.length > 0 ? (
-    vorgang.items.map((item, index) => (
+  {Array.isArray(vorgang.formdata?.items) && vorgang.formdata.items.length > 0 ? (
+  vorgang.formdata.items.map((item, index) => (
       <div key={index} className="border p-3 mb-2 rounded bg-gray-50">
         <div><strong>{index + 1}. {item.description || '–'}</strong></div>
         <div>Tarifnummer: {item.tariff || '–'}</div>

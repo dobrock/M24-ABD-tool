@@ -16,6 +16,7 @@ export default function App() {
   const [items, setItems] = useState([
     { description: '', tariff: '', weight: '', value: '' }
   ]);
+  const [previewData, setPreviewData] = useState<any>(null);
   const [formData, setFormData] = useState({
     invoiceNumber: '',
     invoiceTotal: '',
@@ -97,6 +98,14 @@ export default function App() {
       }
   
       const result = await response.json();
+      setPreviewData({
+        ...formData,
+        items,
+        createdAt,
+        fileName,
+        status: 'angelegt',
+        notizen: 'Automatisch generiert',
+      });      
       console.log('✅ Antwort vom Server:', result);
   
       // 💾 PDF lokal speichern
@@ -361,6 +370,15 @@ export default function App() {
 
       <div id="vorgangsliste" className="mt-12">
       <VorgangsTest key={refreshKey} />
+      {previewData && (
+  <div className="max-w-4xl mx-auto mt-12 bg-gray-100 border rounded p-4">
+    <h3 className="text-md font-semibold mb-2 text-gray-700">🧾 Vorschau der gespeicherten Daten</h3>
+    <pre className="text-xs whitespace-pre-wrap bg-white rounded p-4 overflow-x-auto">
+      {JSON.stringify(previewData, null, 2)}
+    </pre>
+  </div>
+)}
+
       </div>
     </div>
   );

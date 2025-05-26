@@ -2,23 +2,26 @@ const express = require('express');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const { Pool } = require('pg');
-const app = express();
 const multer = require('multer');
-const upload = multer(); // Speicher im RAM (kann später angepasst werden)
+const upload = multer();
+const { exec } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
-require('dotenv').config({ path: '.env.local' }); // explizit sicherstellen
-console.log('📦 Verbinde mit PG:', process.env.PG_CONNECTION);
+require('dotenv').config({ path: '.env.local' });
 
+const app = express();
 app.use(cors());
 app.use(express.json());
 
-// PostgreSQL Pool (Render DB)
+console.log('📦 Verbinde mit PG:', process.env.PG_CONNECTION);
+
 const pool = new Pool({
   connectionString: process.env.PG_CONNECTION,
   ssl: { rejectUnauthorized: false }
 });
 
-// Tabelle anlegen (falls noch nicht existiert)
+// Tabelle erstellen
 const initDB = async () => {
   try {
     await pool.query(`
@@ -30,7 +33,8 @@ const initDB = async () => {
         land TEXT,
         waren TEXT,
         status TEXT,
-        notizen TEXT
+        notizen TEXT,
+        formdata JSONB
       )
     `);
     console.log('✅ Tabelle vorgaenge bereit.');
@@ -39,31 +43,27 @@ const initDB = async () => {
   }
 };
 
-// Vorgang anlegen
+// POST /api/vorgaenge
 app.post('/api/vorgaenge', upload.any(), async (req, res) => {
   console.log('📨 Daten empfangen:', req.body);
 
   const id = uuidv4();
+  let parsedData = {};
 
   try {
-    let parsedData = {};
-try {
-  parsedData = JSON.parse(req.body.data);
-  console.log('✅ parsedData erfolgreich geparst:', parsedData);
-} catch (err) {
-  console.error('❌ Fehler beim Parsen von req.body.data:', err.message);
-  parsedData = {}; // Sicherung
-}
+    parsedData = JSON.parse(req.body.data);
+    console.log('✅ parsedData erfolgreich geparst:', parsedData);
+  } catch (err) {
+    console.error('❌ Fehler beim Parsen von req.body.data:', err.message);
+    return res.status(400).json({ error: 'Ungültiges JSON im data-Feld' });
+  }
 
-const { invoiceNumber, recipient, items, createdAt, fileName, status, notizen } = parsedData;
-
-
-    const waren = items.map(item => item.description).join(', ');
+  try {
+    const { invoiceNumber, recipient, items, createdAt, fileName, status, notizen } = parsedData;
+    const waren = Array.isArray(items) ? items.map(item => item.description).join(', ') : '';
     const empfaenger = recipient?.name || '';
     const land = recipient?.country || '';
     const mrn = invoiceNumber;
-
-    // Optional: PDF abspeichern (z. B. später in FS oder Cloud)
 
     await pool.query(
       `INSERT INTO vorgaenge (
@@ -79,19 +79,39 @@ const { invoiceNumber, recipient, items, createdAt, fileName, status, notizen } 
         waren,
         status || 'angelegt',
         notizen || '',
-        parsedData // Das ist das vollständige JSON aus dem Formular
+        parsedData
       ]
-    );    
+    );
 
     res.json({ success: true, id });
-
   } catch (err) {
     console.error('❌ Fehler beim Anlegen des Vorgangs:', err);
     res.status(500).send(err.message);
   }
 });
 
-// Vorgänge anzeigen
+// POST /api/backup
+app.post('/api/backup', (req, res) => {
+  const timestamp = new Date().toISOString().slice(0,10).replace(/-/g, "_");
+  const filename = `backup_m24_abd_${timestamp}.dump`;
+  const filepath = path.join('/tmp', filename);
+
+  const cmd = `pg_dump -Fc -d "${process.env.PG_CONNECTION}" > ${filepath}`;
+  exec(cmd, (error) => {
+    if (error) {
+      console.error("❌ Backup-Fehler:", error);
+      return res.status(500).json({ error: 'Backup fehlgeschlagen' });
+    }
+
+    console.log("✅ Backup erfolgreich:", filepath);
+    res.download(filepath, filename, (err) => {
+      if (err) console.error("❌ Fehler beim Download:", err);
+      fs.unlink(filepath, () => {});
+    });
+  });
+});
+
+// GET /api/vorgaenge
 app.get('/api/vorgaenge', async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM vorgaenge ORDER BY erstelldatum DESC`);
@@ -102,7 +122,7 @@ app.get('/api/vorgaenge', async (req, res) => {
   }
 });
 
-// Vorgang nach ID anzeigen
+// GET /api/vorgaenge/:id
 app.get('/api/vorgaenge/:id', async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM vorgaenge WHERE id = $1`, [req.params.id]);
@@ -114,7 +134,7 @@ app.get('/api/vorgaenge/:id', async (req, res) => {
   }
 });
 
-// Status eines Vorgangs ändern
+// PATCH /api/vorgaenge/:id/status
 app.patch('/api/vorgaenge/:id/status', async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -127,7 +147,7 @@ app.patch('/api/vorgaenge/:id/status', async (req, res) => {
   }
 });
 
-// MRN aktualisieren
+// PATCH /api/vorgaenge/:id (MRN ändern)
 app.patch('/api/vorgaenge/:id', async (req, res) => {
   const { id } = req.params;
   const { mrn } = req.body;
@@ -140,40 +160,26 @@ app.patch('/api/vorgaenge/:id', async (req, res) => {
   }
 });
 
-// Download Vorgang (Platzhalter PDF)
-app.get('/api/download/:id', async (req, res) => {
-  try {
-    const result = await pool.query(`SELECT * FROM vorgaenge WHERE id = $1`, [req.params.id]);
-    if (result.rows.length === 0) return res.status(404).send('Vorgang nicht gefunden.');
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send('%PDF-1.4\n% Fake-PDF-Content\n... (Hier käme dein PDF)');
-  } catch (err) {
-    console.error('❌ Fehler beim Download:', err);
-    res.status(500).send(err.message);
-  }
-});
-
-// Einzelne Vorgänge löschen
+// DELETE /api/vorgaenge/:id
 app.delete('/api/vorgaenge/:id', async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query('DELETE FROM vorgaenge WHERE id = $1', [id]);
-    res.status(204).send(); // wichtig: kein JSON
+    res.status(204).send();
   } catch (err) {
     console.error('Fehler beim Löschen:', err);
     res.status(500).json({ error: 'Fehler beim Löschen' });
   }
 });
 
-// Fallback für alle anderen Routen
+// Fallback
 app.use((req, res) => {
   res.status(404).send('Route nicht gefunden');
 });
 
-// Start Server
+// Server starten
 const port = process.env.PORT || 3001;
 app.listen(port, '0.0.0.0', () => console.log(`✅ API läuft unter http://localhost:${port}`));
 
-// Init DB beim Start
+// Init DB
 initDB();
