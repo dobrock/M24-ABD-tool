@@ -48,17 +48,17 @@ export default function VorgangDetail() {
       case 'angelegt':
         return (
           <span
-            className="cursor-pointer hover:text-blue-600"
+            className="cursor-pointer hover:text-blue-600 text-base"
             onClick={() => updateStatus('ausfuhr_beantragt')}
             title="Klicken, um zu 'Ausfuhr beantragt' zu wechseln"
           >
-            🫨 Angelegt
+            🫨 angelegt
           </span>
         );
       case 'ausfuhr_beantragt':
         return (
           <span
-            className="cursor-pointer hover:text-blue-600"
+            className="cursor-pointer hover:text-blue-600 text-base"
             onClick={() => updateStatus('angelegt')}
             title="Klicken, um zurück zu 'Angelegt' zu wechseln"
           >
@@ -112,7 +112,7 @@ export default function VorgangDetail() {
            MOTORSPORT24-GmbH_{new Date(vorgang.erstelldatum).toISOString().slice(2, 10).replace(/-/g, '-')}_{vorgang.formdata?.invoiceNumber || '–'}
         </div>
 
-          <div className="text-sm font-medium text-gray-800">
+          <div className="font-medium text-gray-800 text-base">
             <strong>Status:</strong> {statusDarstellung(vorgang.status)}
           </div>
         </div>
@@ -230,7 +230,7 @@ export default function VorgangDetail() {
       ))}
 
       {/* Abstand unter der Tabelle */}
-      <div className="px-6 pt-4" />
+      <div className="px-6" />
           </>
         ) : (
           <p className="text-gray-500 px-6 py-4">Keine Positionen vorhanden.</p>
@@ -238,10 +238,9 @@ export default function VorgangDetail() {
       </div>
 
       <div className="mb-6 px-6">
-      <div className="flex flex-row justify-between items-start flex-wrap">
+        <div className="flex flex-row justify-between items-end flex-wrap">
           
           {/* 2/3: Eingabebereich links */}
-
           <form
             onSubmit={async (e) => {
               e.preventDefault();
@@ -258,55 +257,61 @@ export default function VorgangDetail() {
                 alert('Fehler beim Hochladen');
               }
             }}
-            className="flex items-end gap-3 w-2/3"
+            className="w-2/3 space-y-2"
           >
-            {/* Auswahlfeld */}
-            <div className="w-1/2">
-              <select
-                name="label"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
+            {/* Überschrift */}        
+            <p className="text-base text-gray-800 font-bold px-1 mb-4">Dateiupload</p>
+
+            {/* Eingabefelder */}
+            <div className="flex items-end gap-3">
+              {/* Auswahlfeld */}
+              <div className="w-1/2">
+                <select
+                  name="label"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
+                >
+                  <option disabled selected value="">Bitte auswählen</option>
+                  <option>Handelsrechnung</option>
+                  <option>Ausfuhrbegleitdokument</option>
+                  <option>Ausgangsvermerk</option>
+                </select>
+              </div>
+
+              {/* Dateiinputfeld */}
+              <div className="relative w-1/2">
+                <input
+                  type="file"
+                  name="file"
+                  id="file"
+                  className="block w-full text-sm text-gray-700 border border-gray-300 rounded-md px-3 py-2 pr-10 cursor-pointer file:cursor-pointer file:border-0 file:bg-white file:text-gray-500 h-[42px]"
+                />
+                <div className="absolute right-2 top-2.5 text-gray-400 pointer-events-none">
+                  📁
+                </div>
+              </div>
+
+              {/* Button */}
+              <button
+                type="submit"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-md shadow hover:from-blue-600 hover:to-blue-700 transition"
+                title="Datei speichern"
               >
-                <option disabled selected value="">Bitte auswählen</option>
-                <option>Handelsrechnung</option>
-                <option>Ausfuhrbegleitdokument</option>
-                <option>Ausgangsvermerk</option>
-              </select>
+                💾
+              </button>
             </div>
-
-            {/* Dateiinputfeld */}
-            <div className="relative w-1/2">
-              <label className="block text-sm font-medium text-gray-700 mb-1 invisible">Datei</label>
-              <input
-                type="file"
-                name="file"
-                id="file"
-                className="block w-full text-sm text-gray-700 border border-gray-300 rounded-md px-3 py-2 pr-10 cursor-pointer file:cursor-pointer file:border-0 file:bg-white file:text-gray-500 h-[42px]"
-              />
-            </div>
-
-            {/* Button */}
-            <button
-              type="submit"
-              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-md shadow hover:from-blue-600 hover:to-blue-700 transition"
-              title="Datei speichern"
-            >
-              💾
-            </button>
-          </form>
-
-
+            </form>
 
           {/* 1/3: Iconbereich rechts */}
           <div className="w-1/3">
-            <div className="px-3 mb-1">
-              <p className="text-base text-gray-800 font-bold">Vorgangs-Dateien</p>
+           <div className="text-center mb-1">
+              <p className="text-base text-gray-800 font-bold mb-4">Vorgangs-Dateien</p>
             </div>
             <div className="flex justify-center items-center gap-4 pt-2">
               <img src="/icons/dokument-100.png" className="h-8" />
               <img src="/icons/sanduhr-leer-25.png" className="h-8" />
               <img src="/icons/sanduhr-voll-25.png" className="h-8" />
-            </div>
           </div>
+        </div>
 
         </div>
       </div>

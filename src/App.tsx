@@ -13,7 +13,7 @@ export default function App() {
         <main className="pt-2 px-4">
         <Routes>
           <Route path="/" element={<ExportForm />} />
-          <Route path="/vorgaenge" element={<VorgangsListe />} /> {/* <- angepasst */}
+          <Route path="/verwaltung" element={<VorgangsListe />} /> {/* <- angepasst */}
           <Route path="/vorgaenge/:id" element={<VorgangDetail />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
