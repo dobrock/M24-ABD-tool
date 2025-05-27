@@ -92,19 +92,26 @@ export default function VorgangDetail() {
         Vorgang Zusammenfassung
       </h1>
 
+      {/*
+      Datenbank Eintrag kompllett sichtbar machen
+      */}
+
+      {/*
       <div className="bg-gray-100 border rounded p-4 mb-6 overflow-auto">
         <h3 className="text-sm font-semibold mb-2">📦 Vollständiger Vorgangsdatensatz (Rohdaten)</h3>
         <pre className="text-xs whitespace-pre-wrap">
         {JSON.stringify(vorgang, null, 2)}
         </pre>
       </div>
+      */}
 
       <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
 
         <div className="flex justify-between items-center mb-4 px-6">
-          <div className="text-lg font-semibold text-gray-800">
-            MOTORSPORT24-GmbH_{new Date(vorgang.erstelldatum).toISOString().slice(2, 10).replace(/-/g, '-')}_{vorgang.invoiceNumber || '–'}
-          </div>
+        <div className="text-lg font-semibold text-gray-800">
+           MOTORSPORT24-GmbH_{new Date(vorgang.erstelldatum).toISOString().slice(2, 10).replace(/-/g, '-')}_{vorgang.formdata?.invoiceNumber || '–'}
+        </div>
+
           <div className="text-sm font-medium text-gray-800">
             <strong>Status:</strong> {statusDarstellung(vorgang.status)}
           </div>
@@ -115,11 +122,12 @@ export default function VorgangDetail() {
           <div>Empfänger</div>
           <div>Empfängerland</div>
         </div>
-        <div className="grid grid-cols-3 px-6 py-2 border-b border-gray-100 mt-6">
+        <div className="grid grid-cols-3 px-6 py-3 border-b border-gray-100 text-sm">
           <div>MOTORSPORT24 GmbH</div>
           <div>{vorgang.formdata?.recipient?.name || '–'}</div>
           <div>{vorgang.formdata?.recipient?.country || '–'}</div>
         </div>
+
 
         {/* 
          🚧 Temporär deaktiviert: erste Artikel-Kurzübersicht 
@@ -147,7 +155,8 @@ export default function VorgangDetail() {
         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showDetails ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700 px-6 pt-4 pb-6 font-semibold">
             <div><strong>Rechnungsnummer:</strong> {vorgang.formdata?.invoiceNumber || '–'}</div>
-            <div><strong>Rechnungsbetrag:</strong> {vorgang.formdata?.invoiceTotal || '–'} €</div>
+            <div><strong>Rechnungsbetrag:</strong> {Number(vorgang.formdata?.invoiceTotal || 0).toLocaleString('de-DE')} €
+            </div>
             <div><strong>Beladeort:</strong> {vorgang.formdata?.loadingPlace || '–'}</div>
             <div><strong>Versandweg:</strong> {vorgang.formdata?.shippingMethod || '–'}</div>
             <div><strong>Empfängeradresse:</strong> {vorgang.formdata?.recipient?.street || '–'}, {vorgang.formdata?.recipient?.zip || ''} {vorgang.formdata?.recipient?.city || ''}</div>
@@ -155,8 +164,7 @@ export default function VorgangDetail() {
           </div>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1 px-6 mt-6">MRN</label>
+        <div className="mt-6 mb-6 px-6">
           <form
             onSubmit={async (e) => {
               e.preventDefault();
@@ -173,15 +181,29 @@ export default function VorgangDetail() {
                 alert('Fehler beim Speichern der MRN');
               }
             }}
-            className="flex gap-2 mt-10 mb-8 px-6"
+            className="flex items-end gap-3"
           >
-            <input
-              type="text"
-              name="mrn"
-              defaultValue={vorgang.mrn}
-              className="w-1/2 border rounded px-3 py-2"
-            />
-            <button type="submit" className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded shadow">
+            <div className="relative w-1/3">
+              <label
+                htmlFor="mrn"
+                className="absolute -top-2 left-3 bg-white px-1 text-xs text-gray-600 z-10"
+              >
+                MRN (Movement Reference Number)
+              </label>
+              <input
+                type="text"
+                name="mrn"
+                id="mrn"
+                defaultValue={vorgang.mrn}
+                placeholder="z. B. 21DE12345678912345"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-md shadow hover:from-blue-600 hover:to-blue-700 transition"
+              title="MRN speichern"
+            >
               💾
             </button>
           </form>
@@ -202,65 +224,99 @@ export default function VorgangDetail() {
           <div className="col-span-6">{item.description || '–'}</div>
           <div className="col-span-3">{item.tariff || '–'}</div>
           <div className="col-span-1 text-center">{item.weight || '–'} kg</div>
-          <div className="col-span-1 text-center">{item.value || '–'} €</div>
+          <div className="col-span-1 text-center">{Number(item.value || 0).toLocaleString('de-DE')} €
+          </div>
         </div>
       ))}
 
       {/* Abstand unter der Tabelle */}
-      <div className="px-6 pt-4 pb-8" />
-    </>
-  ) : (
-    <p className="text-gray-500 px-6 py-4">Keine Positionen vorhanden.</p>
-  )}
-</div>
+      <div className="px-6 pt-4" />
+          </>
+        ) : (
+          <p className="text-gray-500 px-6 py-4">Keine Positionen vorhanden.</p>
+        )}
+      </div>
 
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            if (!formData.get('file')) return alert('Bitte eine Datei auswählen');
-            const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}/upload/generic`, {
-              method: 'POST',
-              body: formData,
-            });
-            if (res.ok) {
-              alert('Datei erfolgreich hochgeladen');
-              loadVorgang();
-            } else {
-              alert('Fehler beim Hochladen');
-            }
-          }}
-          className="flex items-end gap-4 mb-8 px-6"
-        >
-          <div>
-            <label className="block text-sm font-medium mb-1">Dateityp</label>
-            <select name="label" className="border rounded px-2 py-2">
-              <option disabled selected value="">Bitte auswählen</option>
-              <option>Handelsrechnung</option>
-              <option>Ausfuhrbegleitdokument</option>
-              <option>Ausgangsvermerk</option>
-            </select>
-          </div>
-          <div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <img src="/icons/ordner.png" className="h-6" />
-              <span className="text-sm text-gray-700">Datei auswählen</span>
-              <input type="file" name="file" className="hidden" />
-            </label>
-          </div>
-          <button type="submit" className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded shadow">
-            💾
-          </button>
-          <div className="flex items-center justify-center gap-4 pt-4">
-            <img src="/icons/dokument-100.png" className="h-8" />
-            <img src="/icons/sanduhr-leer-25.png" className="h-8" />
-            <img src="/icons/sanduhr-voll-25.png" className="h-8" />
-          </div>
-        </form>
+      <div className="mb-6 px-6">
+      <div className="flex flex-row justify-between items-start flex-wrap">
+          
+          {/* 2/3: Eingabebereich links */}
 
-        <div className="px-6 mb-6">
-          <strong>Notizen:</strong> {vorgang.notizen || '–'}
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              if (!formData.get('file')) return alert('Bitte eine Datei auswählen');
+              const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}/upload/generic`, {
+                method: 'POST',
+                body: formData,
+              });
+              if (res.ok) {
+                alert('Datei erfolgreich hochgeladen');
+                loadVorgang();
+              } else {
+                alert('Fehler beim Hochladen');
+              }
+            }}
+            className="flex items-end gap-3 w-2/3"
+          >
+            {/* Auswahlfeld */}
+            <div className="w-1/2">
+              <select
+                name="label"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
+              >
+                <option disabled selected value="">Bitte auswählen</option>
+                <option>Handelsrechnung</option>
+                <option>Ausfuhrbegleitdokument</option>
+                <option>Ausgangsvermerk</option>
+              </select>
+            </div>
+
+            {/* Dateiinputfeld */}
+            <div className="relative w-1/2">
+              <label className="block text-sm font-medium text-gray-700 mb-1 invisible">Datei</label>
+              <input
+                type="file"
+                name="file"
+                id="file"
+                className="block w-full text-sm text-gray-700 border border-gray-300 rounded-md px-3 py-2 pr-10 cursor-pointer file:cursor-pointer file:border-0 file:bg-white file:text-gray-500 h-[42px]"
+              />
+            </div>
+
+            {/* Button */}
+            <button
+              type="submit"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-md shadow hover:from-blue-600 hover:to-blue-700 transition"
+              title="Datei speichern"
+            >
+              💾
+            </button>
+          </form>
+
+
+
+          {/* 1/3: Iconbereich rechts */}
+          <div className="w-1/3">
+            <div className="px-3 mb-1">
+              <p className="text-base text-gray-800 font-bold">Vorgangs-Dateien</p>
+            </div>
+            <div className="flex justify-center items-center gap-4 pt-2">
+              <img src="/icons/dokument-100.png" className="h-8" />
+              <img src="/icons/sanduhr-leer-25.png" className="h-8" />
+              <img src="/icons/sanduhr-voll-25.png" className="h-8" />
+            </div>
+          </div>
+
         </div>
+      </div>
+
+
+        {vorgang.notizen && (
+          <div className="px-6 mb-6">
+            <strong>Notizen:</strong> {vorgang.notizen}
+          </div>
+        )}
 
         <div className="flex gap-4 mt-8 justify-end px-6">
           <button
