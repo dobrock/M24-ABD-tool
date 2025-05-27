@@ -93,11 +93,11 @@ export default function VorgangDetail() {
       </h1>
 
       <div className="bg-gray-100 border rounded p-4 mb-6 overflow-auto">
-  <h3 className="text-sm font-semibold mb-2">📦 Vollständiger Vorgangsdatensatz (Rohdaten)</h3>
-  <pre className="text-xs whitespace-pre-wrap">
-    {JSON.stringify(vorgang, null, 2)}
-  </pre>
-</div>
+        <h3 className="text-sm font-semibold mb-2">📦 Vollständiger Vorgangsdatensatz (Rohdaten)</h3>
+        <pre className="text-xs whitespace-pre-wrap">
+        {JSON.stringify(vorgang, null, 2)}
+        </pre>
+      </div>
 
       <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
 
@@ -118,9 +118,15 @@ export default function VorgangDetail() {
         <div className="grid grid-cols-3 px-6 py-2 border-b border-gray-100 mt-6">
           <div>MOTORSPORT24 GmbH</div>
           <div>{vorgang.formdata?.recipient?.name || '–'}</div>
-          <div>{vorgang.recipient?.country || '–'}</div>
+          <div>{vorgang.formdata?.recipient?.country || '–'}</div>
         </div>
 
+        {/* 
+         🚧 Temporär deaktiviert: erste Artikel-Kurzübersicht 
+        Grund: formdata.items[] wird dynamisch unten korrekt dargestellt 
+        */}
+
+        {/* 
         <div className="bg-gray-100 text-gray-800 px-6 py-3 grid grid-cols-10 text-sm font-semibold mt-6">
           <div className="col-span-5">Warenbezeichnung</div>
           <div className="col-span-2">Tarifnummer</div>
@@ -133,6 +139,7 @@ export default function VorgangDetail() {
           <div className="col-span-1">{vorgang.items?.[0]?.weight || '–'} kg</div>
           <div className="col-span-2">{vorgang.items?.[0]?.value || '–'} €</div>
         </div>
+        */}
 
         <div className="bg-gray-100 text-gray-800 px-6 py-3 text-sm cursor-pointer select-none rounded-b-xl mt-6" onClick={() => setShowDetails(!showDetails)}>
           + weitere Daten ansehen
@@ -180,22 +187,25 @@ export default function VorgangDetail() {
           </form>
         </div>
 
-        <div className="mb-6 px-6">
-  <h4 className="text-sm font-semibold mb-2">Warenpositionen</h4>
-  {Array.isArray(vorgang.formdata?.items) && vorgang.formdata.items.length > 0 ? (
-  vorgang.formdata.items.map((item, index) => (
-      <div key={index} className="border p-3 mb-2 rounded bg-gray-50">
-        <div><strong>{index + 1}. {item.description || '–'}</strong></div>
-        <div>Tarifnummer: {item.tariff || '–'}</div>
-        <div>Gewicht: {item.weight || '–'} kg</div>
-        <div>Warenwert: {item.value || '–'} €</div>
-      </div>
-    ))
-  ) : (
-    <p className="text-gray-500">Keine Positionen vorhanden.</p>
-  )}
-</div>
+        <div className="bg-gray-100 text-gray-800 px-6 py-3 grid grid-cols-11 text-sm font-semibold mt-6 rounded-t-xl">
+         <div className="col-span-6">Warenbezeichnung</div>
+          <div className="col-span-3">Tarifnummer</div>
+          <div className="col-span-1 text-center">Gewicht</div>
+          <div className="col-span-1 text-center">Wert</div>
+         </div>
 
+        {Array.isArray(vorgang.formdata?.items) && vorgang.formdata.items.length > 0 ? (
+        vorgang.formdata.items.map((item, index) => (
+        <div key={index} className="grid grid-cols-11 gap-2 px-6 py-2 border-b border-gray-100 text-sm">
+          <div className="col-span-6">{item.description || '–'}</div>
+          <div className="col-span-3">{item.tariff || '–'}</div>
+          <div className="col-span-1 text-center">{item.weight || '–'} kg</div>
+          <div className="col-span-1 text-center">{item.value || '–'} €</div>
+        </div>
+  ))
+) : (
+  <p className="text-gray-500 px-6 py-4">Keine Positionen vorhanden.</p>
+)}
         <form
           onSubmit={async (e) => {
             e.preventDefault();

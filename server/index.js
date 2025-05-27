@@ -63,7 +63,7 @@ app.post('/api/vorgaenge', upload.any(), async (req, res) => {
     const waren = Array.isArray(items) ? items.map(item => item.description).join(', ') : '';
     const empfaenger = recipient?.name || '';
     const land = recipient?.country || '';
-    const mrn = invoiceNumber;
+    const mrn = parsedData.mrn || null;
 
     await pool.query(
       `INSERT INTO vorgaenge (
