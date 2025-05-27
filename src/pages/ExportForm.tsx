@@ -73,6 +73,14 @@ export default function App() {
   
       // 📄 PDF generieren
       const pdfBlob = await generatePDF({ ...formData, items });
+
+      if (!pdfBlob || !(pdfBlob instanceof Blob)) {
+        console.error('❌ Ungültiger PDF-Blob:', pdfBlob);
+        setIsSubmitting(false);
+        setStatusMessage('❌ PDF konnte nicht erstellt werden.');
+        return;
+      }
+
       const pdfFile = new File([pdfBlob], `${fileName}.pdf`, { type: 'application/pdf' });
   
       // 📤 FormData für Upload
