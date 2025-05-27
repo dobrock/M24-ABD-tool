@@ -11,12 +11,12 @@ export default function App() {
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         <Navigation />
         <main className="pt-2 px-4">
-          <Routes>
-            <Route path="/" element={<ExportForm />} />
-            <Route path="/verwaltung" element={<VorgangsListe />} />
-            <Route path="/vorgaenge/:id" element={<VorgangDetail />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
+        <Routes>
+          <Route path="/" element={<ExportForm />} />
+          <Route path="/vorgaenge" element={<VorgangsListe />} /> {/* <- angepasst */}
+          <Route path="/vorgaenge/:id" element={<VorgangDetail />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
         </main>
       </div>
     </Router>

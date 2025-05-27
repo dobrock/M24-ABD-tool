@@ -17,11 +17,12 @@ const countryCodes = {
   'Vereinigtes Königreich': 'GB'
 };
 
-export async function generatePDF(formData) {
+export async function generatePDF(data): Promise<Blob> {
+  const formData = data;
   const pdfDoc = await PDFDocument.create();
   let page = pdfDoc.addPage([595, 842]);
-  const { width, height } = page.getSize();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const { width, height } = page.getSize();
 
   const drawText = (text, x, y, size = 10, color = rgb(0, 0, 0)) => {
     page.drawText(text, { x, y, size, font, color });
@@ -165,8 +166,6 @@ export async function generatePDF(formData) {
   drawText(`1 | PC | Paket | 1 | ${formData.invoiceNumber || '---'}`, 50, y); y -= 30;
 
   const pdfBytes = await pdfDoc.save();
-  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-  const nowDate = new Date();
-  const timestamp = `${nowDate.getFullYear()}-${(nowDate.getMonth() + 1).toString().padStart(2, '0')}-${nowDate.getDate().toString().padStart(2, '0')}_${nowDate.getHours().toString().padStart(2, '0')}-${nowDate.getMinutes().toString().padStart(2, '0')}`;
-  saveAs(blob, `ABD_${timestamp}.pdf`);
+  return new Blob([pdfBytes], { type: 'application/pdf' });
+  
 }

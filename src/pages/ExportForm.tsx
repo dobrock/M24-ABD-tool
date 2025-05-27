@@ -2,20 +2,17 @@ import React, { useState, useEffect } from 'react';
 import logo from '../assets/MOTORSPORT24-Logo_768px.png';
 import { generatePDF } from '../ExportPDF';
 import VorgangsTest from '../components/VorgangsTest';
+import { downloadPDF } from '../components/downloadPDF';
+import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 console.log('🧪 API_BASE_URL:', API_BASE_URL);
-
-function generateFileName(shipper: string, createdAt: string, invoiceNumber: string): string {
-  const formattedDate = new Date(createdAt).toISOString().split('T')[0].replace(/-/g, '-').slice(2); // yy-mm-dd
-  const safeShipper = shipper.replace(/\s+/g, '-');
-  return `${safeShipper}_${formattedDate}_${invoiceNumber}`;
-}
 
 export default function App() {
   const [items, setItems] = useState([
     { description: '', tariff: '', weight: '', value: '' }
   ]);
+  const navigate = useNavigate();
   const [previewData, setPreviewData] = useState<any>(null);
   const [formData, setFormData] = useState({
     invoiceNumber: '',
@@ -69,8 +66,11 @@ export default function App() {
       const shipper = 'MOTORSPORT24-GmbH';
       const invoiceNumber = formData.invoiceNumber;
   
-      const fileName = generateFileName(shipper, createdAt, invoiceNumber);
-  
+      const recipientName = formData.recipient.name || 'Unbekannt';
+      const safeName = recipientName.replace(/\s+/g, '-');
+      const formattedDate = new Date(createdAt).toISOString().split('T')[0].replace(/-/g, '-').slice(2);
+      const fileName = `${safeName}_${formattedDate}_${invoiceNumber}`;
+        
       // 📄 PDF generieren
       const pdfBlob = await generatePDF({ ...formData, items });
 
@@ -117,12 +117,7 @@ export default function App() {
       console.log('✅ Antwort vom Server:', result);
   
       // 💾 PDF lokal speichern
-      const downloadLink = document.createElement('a');
-      downloadLink.href = URL.createObjectURL(pdfBlob);
-      downloadLink.download = `${fileName}.pdf`;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
+      downloadPDF(pdfBlob, `${fileName}.pdf`);
   
       // ✅ Erfolgsmeldung
       setIsSubmitting(false);
@@ -131,8 +126,8 @@ export default function App() {
   
       // ⏩ Weiterleitung zur Übersicht
       setTimeout(() => {
-        window.location.href = '/vorgaenge';
-      }, 1500);
+        navigate('/vorgaenge');
+      }, 1500);      
   
     } catch (error) {
       console.error('❌ Fehler beim Speichern:', error);
