@@ -187,25 +187,33 @@ export default function VorgangDetail() {
           </form>
         </div>
 
-        <div className="bg-gray-100 text-gray-800 px-6 py-3 grid grid-cols-11 text-sm font-semibold mt-6 rounded-t-xl">
-         <div className="col-span-6">Warenbezeichnung</div>
-          <div className="col-span-3">Tarifnummer</div>
-          <div className="col-span-1 text-center">Gewicht</div>
-          <div className="col-span-1 text-center">Wert</div>
-         </div>
+        <div className="mb-6">
+  {Array.isArray(vorgang.formdata?.items) && vorgang.formdata.items.length > 0 ? (
+    <>
+      <div className="bg-gray-100 text-gray-800 px-6 py-3 grid grid-cols-11 text-sm font-semibold rounded-t-xl">
+        <div className="col-span-6">Warenbezeichnung</div>
+        <div className="col-span-3">Tarifnummer</div>
+        <div className="col-span-1 text-center">Gewicht</div>
+        <div className="col-span-1 text-center">Wert</div>
+      </div>
 
-        {Array.isArray(vorgang.formdata?.items) && vorgang.formdata.items.length > 0 ? (
-        vorgang.formdata.items.map((item, index) => (
+      {vorgang.formdata.items.map((item, index) => (
         <div key={index} className="grid grid-cols-11 gap-2 px-6 py-2 border-b border-gray-100 text-sm">
           <div className="col-span-6">{item.description || '–'}</div>
           <div className="col-span-3">{item.tariff || '–'}</div>
           <div className="col-span-1 text-center">{item.weight || '–'} kg</div>
           <div className="col-span-1 text-center">{item.value || '–'} €</div>
         </div>
-  ))
-) : (
-  <p className="text-gray-500 px-6 py-4">Keine Positionen vorhanden.</p>
-)}
+      ))}
+
+      {/* Abstand unter der Tabelle */}
+      <div className="px-6 pt-4 pb-8" />
+    </>
+  ) : (
+    <p className="text-gray-500 px-6 py-4">Keine Positionen vorhanden.</p>
+  )}
+</div>
+
         <form
           onSubmit={async (e) => {
             e.preventDefault();
