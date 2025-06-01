@@ -43,8 +43,8 @@ const initDB = async () => {
   }
 };
 
-// POST /api/vorgaenge
-app.post('/api/vorgaenge', upload.any(), async (req, res) => {
+  // POST /api/vorgaenge
+  app.post('/api/vorgaenge', upload.any(), async (req, res) => {
   console.log('📨 Daten empfangen:', req.body);
 
   const id = uuidv4();
@@ -82,6 +82,26 @@ app.post('/api/vorgaenge', upload.any(), async (req, res) => {
         parsedData
       ]
     );
+    
+    // 📁 Upload-Ordner automatisch anlegen
+    const uploadsDir = path.join(__dirname, 'uploads', id);
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+    
+    // 📄 Atlas-PDF automatisch erstellen
+    const safeEmpfaenger = empfaenger.replace(/\s+/g, '-') || 'Empfaenger';
+    const erstelldatum = new Date().toISOString().slice(0, 10);
+    const atlasFilename = `${safeEmpfaenger}-${erstelldatum}.pdf`;
+    const atlasPath = path.join(uploadsDir, atlasFilename);
+    
+    const uploadedPdf = req.files?.find(f => f.fieldname === 'pdf');
+
+    if (uploadedPdf) {
+      fs.writeFileSync(atlasPath, uploadedPdf.buffer);
+      console.log(`✅ Generierte Atlas-PDF gespeichert unter: ${atlasPath}`);
+    } else {
+      console.warn('⚠️ Keine PDF-Datei im Upload gefunden, Dummy wird erzeugt');
+      fs.writeFileSync(atlasPath, `PDF-Inhalt für ${empfaenger}, erstellt am ${erstelldatum}`);
+    }
 
     res.json({ success: true, id });
   } catch (err) {
@@ -192,7 +212,11 @@ const fileUpload = multer({ dest: 'temp/' }); // Temporäres Ziel
 
 app.post('/api/vorgaenge/:id/upload/generic', fileUpload.single('file'), async (req, res) => {
   const vorgangId = req.params.id;
-  const label = req.body.label || 'generic';
+  const labelRaw = req.body?.label;
+  console.log('🧪 label received:', labelRaw);
+  const label = Array.isArray(labelRaw) ? labelRaw[0] : (typeof labelRaw === 'string' ? labelRaw : 'generic');
+  const safeLabel = label.toLowerCase().replace(/\s+/g, '-');
+
   const file = req.file;
 
   if (!file) return res.status(400).json({ error: 'Keine Datei empfangen' });
@@ -201,8 +225,31 @@ app.post('/api/vorgaenge/:id/upload/generic', fileUpload.single('file'), async (
     const uploadsDir = path.join(__dirname, 'uploads', vorgangId);
     if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-    const safeLabel = label.toLowerCase().replace(/\s+/g, '-'); // z. B. "Ausgangsvermerk" → "ausgangsvermerk"
-    const targetPath = path.join(uploadsDir, `${safeLabel}.pdf`);
+    // 🔍 lade Vorgang aus DB
+    const result = await pool.query(`SELECT * FROM vorgaenge WHERE id = $1`, [vorgangId]);
+    const vorgang = result.rows[0];
+    const formdata = vorgang?.formdata || {};
+    const empfaenger = formdata?.recipient?.name?.replace(/\s+/g, '-') || 'Empfaenger';
+    const rechnungsnummer = formdata?.invoiceNumber || 'Unbekannt';
+    const erstellDatum = new Date(vorgang.erstelldatum).toISOString().slice(0, 10); // z. B. 2025-06-01
+    const mrn = vorgang.mrn;
+
+    let filename = 'datei.pdf';
+
+    // 🔀 Dateiname abhängig vom Label
+    if (label.toLowerCase().includes('atlas')) {
+      filename = `${empfaenger}-${erstellDatum}.pdf`;
+    } else if (label.toLowerCase().includes('rechnung')) {
+      filename = `Rg_${rechnungsnummer}.pdf`;
+    } else if (label.toLowerCase().includes('ausfuhrbegleitdokument')) {
+      filename = mrn ? `ABD_${mrn}.pdf` : `ABD_${rechnungsnummer}.pdf`;
+    } else if (label.toLowerCase().includes('ausgangsvermerk')) {
+      filename = mrn ? `AGV_${mrn}.pdf` : `AGV_${rechnungsnummer}.pdf`;
+    } else {
+      filename = `${label}.pdf`;
+    }
+
+    const targetPath = path.join(uploadsDir, filename.replace(/[^\w.\-_]/g, '_'));
 
     fs.renameSync(file.path, targetPath);
 
