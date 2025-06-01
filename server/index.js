@@ -127,7 +127,22 @@ app.get('/api/vorgaenge/:id', async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM vorgaenge WHERE id = $1`, [req.params.id]);
     if (result.rows.length === 0) return res.status(404).send('Nicht gefunden');
-    res.json(result.rows[0]);
+
+    const vorgang = result.rows[0];
+
+    // Dateien aus dem Upload-Ordner simulieren
+    const fileBase = `https://m24-abd-api-backend.onrender.com/uploads/${vorgang.id}`;
+    const files = {
+      pdf: `${fileBase}/atlas.pdf`,
+      invoice: `${fileBase}/handelsrechnung.pdf`,
+      abd: `${fileBase}/abd.pdf`,
+      agv: `${fileBase}/agv.pdf`,
+    };
+
+    res.json({
+      ...vorgang,
+      files,
+    });
   } catch (err) {
     console.error('❌ Fehler beim Abrufen des Vorgangs:', err);
     res.status(500).send(err.message);
@@ -171,6 +186,38 @@ app.delete('/api/vorgaenge/:id', async (req, res) => {
     res.status(500).json({ error: 'Fehler beim Löschen' });
   }
 });
+
+// 📥 Dateiupload für Vorgang
+const fileUpload = multer({ dest: 'temp/' }); // Temporäres Ziel
+
+app.post('/api/vorgaenge/:id/upload/generic', fileUpload.single('file'), async (req, res) => {
+  const vorgangId = req.params.id;
+  const label = req.body.label || 'generic';
+  const file = req.file;
+
+  if (!file) return res.status(400).json({ error: 'Keine Datei empfangen' });
+
+  try {
+    const uploadsDir = path.join(__dirname, 'uploads', vorgangId);
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+    const safeLabel = label.toLowerCase().replace(/\s+/g, '-'); // z. B. "Ausgangsvermerk" → "ausgangsvermerk"
+    const targetPath = path.join(uploadsDir, `${safeLabel}.pdf`);
+
+    fs.renameSync(file.path, targetPath);
+
+    console.log(`✅ Datei gespeichert unter: ${targetPath}`);
+    res.json({ success: true, path: `/uploads/${vorgangId}/${safeLabel}.pdf` });
+  } catch (err) {
+    console.error('❌ Fehler beim Speichern der Datei:', err);
+    res.status(500).json({ error: 'Fehler beim Speichern' });
+  }
+});
+
+// 🆕 Statisches Ausliefern des /uploads-Ordners aktivieren
+const uploadsPath = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath);
+app.use('/uploads', express.static(uploadsPath));
 
 // Fallback
 app.use((req, res) => {

@@ -307,10 +307,61 @@ export default function VorgangDetail() {
               <p className="text-base text-gray-800 font-bold mb-4">Vorgangs-Dateien</p>
             </div>
             <div className="flex justify-center items-center gap-4 pt-2">
-              <img src="/icons/dokument-100.png" className="h-8" />
-              <img src="/icons/sanduhr-leer-25.png" className="h-8" />
-              <img src="/icons/sanduhr-voll-25.png" className="h-8" />
+
+            {/* Atlas-PDF */}
+            <button
+              title="Atlas Eingabedaten herunterladen"
+              disabled={!vorgang.files?.pdf}
+              onClick={() => window.open(vorgang.files.pdf, '_blank')}
+              className="hover:scale-105 transition transform"
+            >
+              <img
+                src="/src/pages/icons/dokument-50.png"
+                className={`h-8 ${!vorgang.files?.pdf ? "opacity-25 cursor-not-allowed" : ""}`}
+              />
+            </button>
+
+            {/* Handelsrechnung */}
+            <button
+              title={vorgang.files?.invoice ? "Handelsrechnung herunterladen" : "bitte Handelsrechnung hochladen"}
+              disabled={!vorgang.files?.invoice}
+              onClick={() => window.open(vorgang.files.invoice, '_blank')}
+              className="hover:scale-105 transition transform"
+            >
+              <img
+                src={vorgang.files?.invoice ? "/src/pages/icons/dokument-50.png" : "/icons/dokument-25.png"}
+                className={`h-8 ${!vorgang.files?.invoice ? "opacity-25 cursor-not-allowed" : ""}`}
+              />
+            </button>
+
+            {/* ABD */}
+            <button
+              title={vorgang.files?.abd ? "Ausfuhrbegleitdokument herunterladen" : "Warten auf ABD"}
+              disabled={!vorgang.files?.abd}
+              onClick={() => window.open(vorgang.files.abd, '_blank')}
+              className="hover:scale-105 transition transform"
+            >
+              <img
+                src={vorgang.files?.abd ? "/src/pages/icons/dokument-50.png" : "/icons/sanduhr-leer-50.png"}
+                className={`h-8 ${!vorgang.files?.abd ? "opacity-25 cursor-not-allowed" : ""}`}
+              />
+            </button>
+
+            {/* AGV */}
+            <button
+              title={vorgang.files?.agv ? "Ausgangsvermerk herunterladen" : "Warten auf AGV"}
+              disabled={!vorgang.files?.agv}
+              onClick={() => window.open(vorgang.files.agv, '_blank')}
+              className="hover:scale-105 transition transform"
+            >
+              <img
+                src={vorgang.files?.agv ? "/src/pages/icons/dokument-50.png" : "/icons/sanduhr-voll-50.png"}
+                className={`h-8 ${!vorgang.files?.agv ? "opacity-25 cursor-not-allowed" : ""}`}
+              />
+            </button>
+
           </div>
+
         </div>
 
         </div>
