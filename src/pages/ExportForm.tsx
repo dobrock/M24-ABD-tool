@@ -117,7 +117,7 @@ export default function App() {
       console.log('✅ Antwort vom Server:', result);
   
       // 💾 PDF lokal speichern
-      downloadPDF(pdfBlob, `${fileName}.pdf`);
+      // downloadPDF(pdfBlob, `${fileName}.pdf`);
   
       // ✅ Erfolgsmeldung
       setIsSubmitting(false);
