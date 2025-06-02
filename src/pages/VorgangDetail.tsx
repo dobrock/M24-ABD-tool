@@ -127,10 +127,6 @@ export default function VorgangDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-4 pb-12 px-4 sm:px-6 lg:px-8">
-      {/* 🧪 TESTAUSGABE DER FILES */}
-    <pre className="text-xs text-red-700 px-4 py-2 bg-red-50 border border-red-200 rounded mb-4">
-      {JSON.stringify(vorgang.files, null, 2)}
-    </pre>
       <h1 className="text-2xl font-bold text-gray-800 mb-6 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         Vorgang Zusammenfassung
       </h1>

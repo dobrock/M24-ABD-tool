@@ -4,6 +4,7 @@ import { generatePDF } from '../ExportPDF';
 import VorgangsTest from '../components/VorgangsTest';
 import { downloadPDF } from '../components/downloadPDF';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 console.log('🧪 API_BASE_URL:', API_BASE_URL);
@@ -100,6 +101,14 @@ export default function App() {
         method: 'POST',
         body: formDataToSend,
       });
+      
+      if (response.ok) {
+        const data = await response.json();
+        toast.success('Vorgang erfolgreich erstellt');
+        navigate(`/vorgaenge/${data.id}`);
+      } else {
+        toast.error('Erstellen fehlgeschlagen');
+      }      
   
       if (!response.ok) {
         throw new Error(`Fehler vom Server: ${response.status}`);
@@ -126,7 +135,7 @@ export default function App() {
   
       // ⏩ Weiterleitung zur Übersicht
       setTimeout(() => {
-        navigate('/vorgaenge');
+        navigate('/verwaltung');
       }, 1500);      
   
     } catch (error) {
@@ -369,19 +378,6 @@ export default function App() {
     <p className="mt-4 text-sm text-gray-600">{statusMessage}</p>
   )}
 </div>
-      </div>
-
-      <div id="vorgangsliste" className="mt-12">
-      <VorgangsTest key={refreshKey} />
-      {previewData && (
-  <div className="max-w-4xl mx-auto mt-12 bg-gray-100 border rounded p-4">
-    <h3 className="text-md font-semibold mb-2 text-gray-700">🧾 Vorschau der gespeicherten Daten</h3>
-    <pre className="text-xs whitespace-pre-wrap bg-white rounded p-4 overflow-x-auto">
-      {JSON.stringify(previewData, null, 2)}
-    </pre>
-  </div>
-)}
-
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Dialog from '@radix-ui/react-dialog';
+import { toast } from 'react-hot-toast';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -69,12 +70,21 @@ export default function VorgangsListe() {
 
   const handleDelete = async (id: string) => {
     try {
-      await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, { method: 'DELETE' });
-      loadVorgaenge();
+      const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, {
+        method: 'DELETE',
+      });
+  
+      if (res.ok) {
+        toast.success('Vorgang wurde gelöscht');
+        loadVorgaenge(); // Daten neu laden
+      } else {
+        toast.error('Löschen fehlgeschlagen');
+      }
     } catch (err) {
-      console.error('Fehler beim Löschen:', err);
+      console.error('❌ Fehler beim Löschen:', err);
+      toast.error('Serverfehler beim Löschen');
     }
-  };
+  };  
 
   const statusIcons: any = {
     'angelegt': '🫨',
@@ -189,18 +199,35 @@ export default function VorgangsListe() {
                   </td>
                   <td className="px-4 py-2 text-sm whitespace-nowrap">{new Date(vorgang.erstelldatum).toLocaleDateString()}</td>
                   <td className="px-4 py-2 text-sm w-48 whitespace-nowrap">
-                    {['angelegt', 'ausfuhr_beantragt'].includes(vorgang.status) ? (
-                      <span
-                      className="cursor-pointer hover:text-blue-600 whitespace-nowrap"
-                      onClick={() => toggleStatus(vorgang)}
-                      title="Klicken, um Status zu wechseln"
-                    >
-                        {statusIcons[vorgang.status]} {statusLabels[vorgang.status]}
-                      </span>
-                    ) : (
-                      <span>{statusIcons[vorgang.status]} {statusLabels[vorgang.status]}</span>
-                    )}
-                  </td>
+  {['abd_erhalten', 'agv_vorliegend'].includes(vorgang.status) ? (
+    <span className="text-gray-600">
+      {statusIcons[vorgang.status]} {statusLabels[vorgang.status]}
+    </span>
+  ) : (
+    <Tooltip.Provider delayDuration={150}>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
+          <span
+            className="cursor-pointer hover:text-blue-600 transition"
+            onClick={() => toggleStatus(vorgang)}
+          >
+            {statusIcons[vorgang.status]} {statusLabels[vorgang.status]}
+          </span>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content
+            className="bg-white border text-black px-3 py-1.5 rounded shadow text-sm"
+            sideOffset={5}
+          >
+            Klicken zum Statuswechsel
+            <Tooltip.Arrow className="fill-white" />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
+  )}
+</td>
+
                   <td className="px-4 py-2 w-12 text-center text-lg transition-colors duration-150 whitespace-nowrap">
                     {/* 1. Atlas PDF */}
                     <Tooltip.Provider delayDuration={200}>
