@@ -151,13 +151,23 @@ app.get('/api/vorgaenge/:id', async (req, res) => {
     const vorgang = result.rows[0];
 
     // Dateien aus dem Upload-Ordner simulieren
-    const fileBase = `https://m24-abd-api-backend.onrender.com/uploads/${vorgang.id}`;
-    const files = {
-      pdf: `${fileBase}/atlas.pdf`,
-      invoice: `${fileBase}/handelsrechnung.pdf`,
-      abd: `${fileBase}/abd.pdf`,
-      agv: `${fileBase}/agv.pdf`,
-    };
+    const uploadsDir = path.join(__dirname, 'uploads', vorgang.id);
+    let files = {};
+
+    if (fs.existsSync(uploadsDir)) {
+      const filenames = fs.readdirSync(uploadsDir);
+      filenames.forEach((filename) => {
+        const lower = filename.toLowerCase();
+        if (lower.includes('atlas') || lower.match(/^[\w-]+-\d{4}-\d{2}-\d{2}\.pdf$/)) {
+          files.pdf = `/uploads/${vorgang.id}/${filename}`;
+        }        
+        else if (lower.includes('rg_')) files.invoice = `/uploads/${vorgang.id}/${filename}`;
+        else if (lower.includes('abd_')) files.abd = `/uploads/${vorgang.id}/${filename}`;
+        else if (lower.includes('agv_')) files.agv = `/uploads/${vorgang.id}/${filename}`;
+      });
+
+      console.log('🧪 Gefundene Dateien im Ordner:', files);
+}
 
     res.json({
       ...vorgang,
@@ -175,9 +185,9 @@ app.patch('/api/vorgaenge/:id/status', async (req, res) => {
   const { status } = req.body;
   try {
     await pool.query(`UPDATE vorgaenge SET status = $1 WHERE id = $2`, [status, id]);
-    res.json({ success: true });
+    res.json({ success: true }); // ✅ <- das ist wichtig
   } catch (err) {
-    console.error('❌ Fehler beim Status-Update:', err);
+    console.error('❌ Fehler beim Aktualisieren des Status:', err);
     res.status(500).send(err.message);
   }
 });
@@ -252,13 +262,54 @@ app.post('/api/vorgaenge/:id/upload/generic', fileUpload.single('file'), async (
     const targetPath = path.join(uploadsDir, filename.replace(/[^\w.\-_]/g, '_'));
 
     fs.renameSync(file.path, targetPath);
-
     console.log(`✅ Datei gespeichert unter: ${targetPath}`);
-    res.json({ success: true, path: `/uploads/${vorgangId}/${safeLabel}.pdf` });
+
+    // 📦 Status automatisch anpassen nach Upload
+    try {
+      const currentStatus = vorgang.status;
+      const lower = filename.toLowerCase();
+
+      console.log('📌 Erkenne Statusänderung...');
+      console.log('📌 Filename:', lower);
+      console.log('📌 Current Status:', currentStatus);
+
+      if (lower.startsWith('abd_') && ['angelegt', 'ausfuhr_beantragt'].includes(currentStatus)) {
+        await pool.query('UPDATE vorgaenge SET status = $1 WHERE id = $2', ['abd_erhalten', vorgangId]);
+        console.log('✅ Status geändert auf abd_erhalten');
+      }
+
+      if (lower.startsWith('agv_')) {
+        await pool.query('UPDATE vorgaenge SET status = $1 WHERE id = $2', ['agv_vorliegend', vorgangId]);
+        console.log('✅ Status geändert auf agv_vorliegend');
+      }
+    } catch (err) {
+      console.error('❌ Fehler bei Statusaktualisierung:', err);
+    }
+
+    res.json({ success: true, path: `/uploads/${vorgangId}/${encodeURIComponent(filename.replace(/[^\w.\-_]/g, '_'))}` });
   } catch (err) {
     console.error('❌ Fehler beim Speichern der Datei:', err);
     res.status(500).json({ error: 'Fehler beim Speichern' });
   }
+});
+
+// 🧾 Eigene Route für Downloads (PDFs oder andere Dateien)
+app.get('/download/:vorgangId/:filename', (req, res) => {
+  const { vorgangId, filename } = req.params;
+  const filePath = path.join(__dirname, 'uploads', vorgangId, filename);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send('Datei nicht gefunden');
+  }
+
+  res.download(filePath, filename, (err) => {
+    if (err) {
+      console.error('❌ Fehler beim Download:', err);
+      res.status(500).send('Fehler beim Download');
+    } else {
+      console.log(`✅ Download erfolgreich: ${filename}`);
+    }
+  });
 });
 
 // 🆕 Statisches Ausliefern des /uploads-Ordners aktivieren
