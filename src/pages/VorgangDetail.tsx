@@ -1,10 +1,50 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Dialog from '@radix-ui/react-dialog';
+import * as Tooltip from '@radix-ui/react-tooltip'; // ✅ Nur dieser Import!
+import { getFileUrl } from '@/lib/utils';
+import { Mail, Send } from 'lucide-react';
+import { generateEmailLink } from '@/components/generateEmailLink';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+let uploads: any[] = [];
+
+const getUploadUrl = (typ: string) => {
+  const eintrag = uploads.find(file =>
+    file.typ?.toLowerCase().includes(typ.toLowerCase())
+  );
+  return eintrag?.url || null;
+};
+
+const renderIcon = (typ: string, fallbackIcon: string, label: string) => {
+  const url = getUploadUrl(typ);
+  const iconPath = url ? "/icons/dokument-100.png" : fallbackIcon;
+
+  return (
+    <Tooltip.Provider delayDuration={100}>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
+          <button
+            onClick={() => url && window.open(url, '_blank')}
+            disabled={!url}
+            className="hover:scale-105 transition transform"
+          >
+            <img src={iconPath} className={`h-8 ${!url ? 'cursor-not-allowed opacity-25' : ''}`} />
+          </button>
+        </Tooltip.Trigger>
+        <Tooltip.Content
+          className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
+          sideOffset={5}
+        >
+          {url ? `${label} herunterladen` : `Warten auf ${label}`}
+          <Tooltip.Arrow className="fill-gray-300" />
+        </Tooltip.Content>
+      </Tooltip.Root>
+    </Tooltip.Provider>
+  );
+};
 
 const downloadFile = (url: string) => {
   const filename = url.split('/').pop() || 'download.pdf';
@@ -17,10 +57,19 @@ const downloadFile = (url: string) => {
 };
 
 export default function VorgangDetail() {
+  const [fileInputKey, setFileInputKey] = useState(Date.now());
+  const [selectedLabel, setSelectedLabel] = useState("");
   const { id } = useParams();
   const navigate = useNavigate();
   const [vorgang, setVorgang] = useState<any>(null);
+    useEffect(() => {
+      if (vorgang) {
+        console.log('📦 Full Vorgang:', vorgang);
+        console.log('🧾 Upload-Dateien:', vorgang.uploads);
+      }
+    }, [vorgang]);
   const [showDetails, setShowDetails] = useState(false);
+  const files = vorgang?.files || {};
 
   const handleDelete = async () => {
     if (!confirm('Diesen Vorgang wirklich löschen?')) return;
@@ -31,6 +80,9 @@ export default function VorgangDetail() {
       });
   
       toast.success('Vorgang wurde gelöscht');
+
+      // PDF herunterladen
+      downloadPDF(pdfBlob, `${fileName}.pdf`);
   
       // ✅ Korrekte Weiterleitung zur Übersicht mit Ersetzen im Verlauf
       navigate('/verwaltung', { replace: true });
@@ -122,8 +174,8 @@ export default function VorgangDetail() {
     );
   };
   
-  
   if (!vorgang) return <p>Vorgang wird geladen...</p>;
+  uploads = vorgang?.uploads || [];
 
   return (
     <div className="min-h-screen bg-gray-50 pt-4 pb-12 px-4 sm:px-6 lg:px-8">
@@ -156,27 +208,6 @@ export default function VorgangDetail() {
           <div>{vorgang.formdata?.recipient?.name || '–'}</div>
           <div>{vorgang.formdata?.recipient?.country || '–'}</div>
         </div>
-
-
-        {/* 
-         🚧 Temporär deaktiviert: erste Artikel-Kurzübersicht 
-        Grund: formdata.items[] wird dynamisch unten korrekt dargestellt 
-        */}
-
-        {/* 
-        <div className="bg-gray-100 text-gray-800 px-6 py-3 grid grid-cols-10 text-sm font-semibold mt-6">
-          <div className="col-span-5">Warenbezeichnung</div>
-          <div className="col-span-2">Tarifnummer</div>
-          <div className="col-span-1">Gewicht</div>
-          <div className="col-span-2">Warenwert</div>
-        </div>
-        <div className="px-6 py-2 grid grid-cols-10 border-b border-gray-100 text-sm">
-          <div className="col-span-5">{vorgang.formdata?.items?.[0]?.description || '–'}          </div>
-          <div className="col-span-2">{vorgang.items?.[0]?.tariff || '–'}</div>
-          <div className="col-span-1">{vorgang.items?.[0]?.weight || '–'} kg</div>
-          <div className="col-span-2">{vorgang.items?.[0]?.value || '–'} €</div>
-        </div>
-        */}
 
         <div className="bg-gray-100 text-gray-800 px-6 py-3 text-sm cursor-pointer select-none rounded-b-xl mt-6" onClick={() => setShowDetails(!showDetails)}>
           + weitere Daten ansehen
@@ -302,20 +333,27 @@ export default function VorgangDetail() {
             onSubmit={async (e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
-              const label = e.currentTarget.label.value;
-              formData.append("label", label);
-              if (!formData.get('file')) return alert('Bitte eine Datei auswählen');
+              const label = formData.get("label")?.toString().trim();
+              if (!label || !formData.get("file")) {
+                alert('Bitte Label und Datei auswählen');
+                return;
+              }
+            
               const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}/upload/generic`, {
                 method: 'POST',
                 body: formData,
               });
+            
               if (res.ok) {
                 toast("✅ Datei erfolgreich hochgeladen");
+                setFileInputKey(Date.now());
+                setSelectedLabel("");
                 loadVorgang();
               } else {
                 toast("❌ Fehler beim Hochladen");
-              }              
+              }
             }}
+            
             className="w-2/3 space-y-2"
           >
             {/* Überschrift */}        
@@ -325,28 +363,28 @@ export default function VorgangDetail() {
             <div className="flex items-end gap-3">
               {/* Auswahlfeld */}
               <div className="w-1/2">
-                <select
-                  name="label"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
-                >
-                  <option disabled selected value="">Bitte auswählen</option>
-                  <option>Handelsrechnung</option>
-                  <option>Ausfuhrbegleitdokument</option>
-                  <option>Ausgangsvermerk</option>
-                </select>
+              <select
+                name="label"
+                value={selectedLabel}
+                onChange={(e) => setSelectedLabel(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
+              >
+                <option disabled value="">Bitte auswählen</option>
+                <option>Handelsrechnung</option>
+                <option>Ausfuhrbegleitdokument</option>
+                <option>Ausgangsvermerk</option>
+              </select>
               </div>
 
               {/* Dateiinputfeld */}
-              <div className="relative w-1/2">
-                <input
-                  type="file"
-                  name="file"
-                  id="file"
-                  className="block w-full text-sm text-gray-700 border border-gray-300 rounded-md px-3 py-2 pr-10 cursor-pointer file:cursor-pointer file:border-0 file:bg-white file:text-gray-500 h-[42px]"
-                />
-                <div className="absolute right-2 top-2.5 text-gray-400 pointer-events-none">
-                  📁
-                </div>
+              <div className="relative w-[30%]">
+              <input
+                key={fileInputKey}
+                type="file"
+                name="file"
+                id="file"
+                className="block w-full text-sm text-gray-700 border border-gray-300 rounded-md px-3 py-2 pr-10 cursor-pointer file:cursor-pointer file:border-0 file:bg-white file:text-transparent file:w-0"
+              />
               </div>
 
               {/* Button */}
@@ -383,120 +421,72 @@ export default function VorgangDetail() {
             <div className="flex justify-center items-center gap-4 pt-2">
 
             {/* Atlas-PDF */}
-
-            <Tooltip.Provider delayDuration={100}>
-              <Tooltip.Root>
-                <Tooltip.Trigger asChild>
-                  <button
-                    onClick={() => {
-                      const fullPath = vorgang.files?.pdf;
-                      if (fullPath) {
-                        const filename = fullPath.split('/').slice(-1)[0];
-                        window.open(`${API_BASE_URL}/download/${id}/${encodeURIComponent(filename)}`, '_blank');
-                      }
-                    }}
-                    disabled={!vorgang.files?.pdf}
-                    className="hover:scale-105 transition transform"
-                  >
-                    <img
-                      src="/icons/dokument-100.png"
-                      className={`h-8 ${!vorgang.files?.pdf ? 'cursor-not-allowed opacity-25' : ''}`}
-                    />
-                  </button>
-                </Tooltip.Trigger>
-                <Tooltip.Portal>
-                  <Tooltip.Content
-                    className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-                    sideOffset={5}
-                  >
-                    Atlas Eingabedaten herunterladen
-                    <Tooltip.Arrow className="fill-gray-300" />
-                  </Tooltip.Content>
-                </Tooltip.Portal>
-              </Tooltip.Root>
-            </Tooltip.Provider>
+            {renderIcon("pdf", "/icons/sanduhr-leer-100.png", "Atlas Eingabedaten")}
 
             {/* Handelsrechnung */}
+            {renderIcon("handelsrechnung", "/icons/sanduhr-leer-100.png", "Handelsrechnung")}
+
+            {/* ABD */}
+            {renderIcon("ausfuhrbegleitdokument", "/icons/sanduhr-leer-100.png", "ABD")}
+
+            {/* AGV */}
+            {renderIcon("ausgangsvermerk", "/icons/sanduhr-voll-100.png", "AGV")}
+
+              {/* E-Mail */}
               <Tooltip.Provider delayDuration={100}>
                 <Tooltip.Root>
                   <Tooltip.Trigger asChild>
                     <button
-                      onClick={() =>
-                        window.open(`${API_BASE_URL}/download/${id}/${vorgang.files.invoice.split('/').pop()}`, '_blank')
-                      }
                       disabled={!vorgang.files?.invoice}
-                      className="hover:scale-105 transition transform"
-                    >
-                      <img
-                        src={vorgang.files?.invoice ? "/icons/dokument-100.png" : "/icons/sanduhr-leer-100.png"}
-                        className={`h-8 ${!vorgang.files?.invoice ? 'cursor-not-allowed opacity-25' : ''}`}
-                      />
-                    </button>
-                  </Tooltip.Trigger>
-                  <Tooltip.Portal>
-                    <Tooltip.Content
-                      className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-                      sideOffset={5}
-                    >
-                      {vorgang.files?.invoice ? "Handelsrechnung herunterladen" : "bitte Handelsrechnung hochladen"}
-                      <Tooltip.Arrow className="fill-gray-300" />
-                    </Tooltip.Content>
-                  </Tooltip.Portal>
-                </Tooltip.Root>
-              </Tooltip.Provider>
+                      onClick={() => {
+                        const typ = vorgang.files?.agv
+                          ? 'agv'
+                          : vorgang.files?.abd
+                          ? 'abd'
+                          : 'auftrag';
 
-              {/* ABD */}
-              <Tooltip.Provider delayDuration={100}>
-                <Tooltip.Root>
-                  <Tooltip.Trigger asChild>
-                    <button
-                      onClick={() =>
-                        window.open(`${API_BASE_URL}/download/${id}/${vorgang.files.abd.split('/').pop()}`, '_blank')
-                      }
-                      disabled={!vorgang.files?.abd}
-                      className="hover:scale-105 transition transform"
-                    >
-                      <img
-                        src={vorgang.files?.abd ? "/icons/dokument-100.png" : "/icons/sanduhr-leer-100.png"}
-                        className={`h-8 ${!vorgang.files?.abd ? 'cursor-not-allowed opacity-25' : ''}`}
-                      />
-                    </button>
-                  </Tooltip.Trigger>
-                  <Tooltip.Portal>
-                    <Tooltip.Content
-                      className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-                      sideOffset={5}
-                    >
-                      {vorgang.files?.abd ? "Ausfuhrbegleitdokument herunterladen" : "Warten auf ABD"}
-                      <Tooltip.Arrow className="fill-gray-300" />
-                    </Tooltip.Content>
-                  </Tooltip.Portal>
-                </Tooltip.Root>
-              </Tooltip.Provider>
+                        // 1. Mail öffnen
+                        const mailto = generateEmailLink({ typ, vorgang });
+                        window.location.href = mailto;
 
-              {/* AGV */}
-              <Tooltip.Provider delayDuration={100}>
-                <Tooltip.Root>
-                  <Tooltip.Trigger asChild>
-                    <button
-                      onClick={() =>
-                        window.open(`${API_BASE_URL}/download/${id}/${vorgang.files.agv.split('/').pop()}`, '_blank')
-                      }
-                      disabled={!vorgang.files?.agv}
-                      className="hover:scale-105 transition transform"
+                        // 2. Benötigte Dateien im Browser öffnen
+                        const fileUrls: string[] = [];
+                        if (typ === 'abd') {
+                          if (vorgang.files?.abd) fileUrls.push(getFileUrl(vorgang.files.abd, id));
+                          if (vorgang.files?.invoice) fileUrls.push(getFileUrl(vorgang.files.invoice, id));
+                        }
+
+                        if (typ === 'agv') {
+                          if (vorgang.files?.agv) fileUrls.push(getFileUrl(vorgang.files.agv, id));
+                          if (vorgang.files?.abd) fileUrls.push(getFileUrl(vorgang.files.abd, id));
+                        }
+
+                        for (const url of fileUrls) {
+                          window.open(url, '_blank');
+                        }
+
+                        toast.success('✉️ Mail erstellt – Anhänge wurden im Browser geöffnet');
+                      }}
+                      className="hover:scale-105 transition-transform"
                     >
                       <img
-                        src={vorgang.files?.agv ? "/icons/dokument-100.png" : "/icons/sanduhr-voll-100.png"}
-                        className={`h-8 ${!vorgang.files?.agv ? 'cursor-not-allowed opacity-25' : ''}`}
+                        src="/icons/mail-100.png"
+                        className={`h-8 ${!vorgang.files?.invoice ? 'cursor-not-allowed opacity-25' : 'opacity-100 hover:opacity-100'}`}
                       />
                     </button>
                   </Tooltip.Trigger>
                   <Tooltip.Portal>
                     <Tooltip.Content
+                      side="top"
                       className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-                      sideOffset={5}
                     >
-                      {vorgang.files?.agv ? "Ausgangsvermerk herunterladen" : "Warten auf AGV"}
+                      {vorgang.files?.agv
+                        ? 'AGV per E-Mail versenden'
+                        : vorgang.files?.abd
+                        ? 'ABD per E-Mail versenden'
+                        : vorgang.files?.invoice
+                        ? 'Auftragsbestätigung senden'
+                        : 'Dateien fehlen'}
                       <Tooltip.Arrow className="fill-gray-300" />
                     </Tooltip.Content>
                   </Tooltip.Portal>
@@ -510,10 +500,28 @@ export default function VorgangDetail() {
         </div>
       </div>
 
+      {uploads.some(file =>
+        (file.typ?.toLowerCase().includes('ausgangsvermerk') || file.typ?.toLowerCase().includes('agv')) &&
+        file.archiv_loeschdatum
+      ) && (
+        <div className="px-6 mb-2 mt-10 text-sm text-gray-700">
+          &nbsp;<strong>Hinweis: </strong>
+          Der Ausgangsvermerk wird am&nbsp;
+          {
+            new Date(
+              uploads.find(f =>
+                (f.typ?.toLowerCase().includes('ausgangsvermerk') || f.typ?.toLowerCase().includes('agv')) &&
+                f.archiv_loeschdatum
+              )?.archiv_loeschdatum
+            ).toLocaleDateString('de-DE')
+          }
+          &nbsp;automatisch gelöscht.
+        </div>
+      )}
 
-        {vorgang.notizen && (
-          <div className="px-6 mb-6">
-            <strong>Notizen:</strong> {vorgang.notizen}
+        {vorgang.notizen?.trim() !== '' && (
+          <div className="px-6 mb-2 text-sm text-gray-700">
+            &nbsp;<strong>Notizen:</strong> {vorgang.notizen}
           </div>
         )}
 

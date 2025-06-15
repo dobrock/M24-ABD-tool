@@ -57,26 +57,40 @@ export default function Navigation() {
           <Link to="/" className={linkClasses('/')}>Formular</Link>
           <Link to="/verwaltung" className={linkClasses('/verwaltung')}>Vorgänge</Link>
           <div
-            className="relative"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          >
-            <button className="px-4 py-2 hover:bg-gray-700 rounded">Sicherung</button>
+  className="relative"
+  onMouseEnter={handleMouseEnter}
+  onMouseLeave={handleMouseLeave}
+>
+            <button className="px-4 py-2 hover:bg-gray-700 rounded transition">Admin-Tools</button>
             {showFlyout && (
-              <div className="absolute top-full left-0 mt-1 bg-white text-gray-900 shadow rounded-lg z-50 w-48 text-sm transition-opacity duration-300 opacity-100">
+              <div className="absolute top-full left-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl text-sm text-gray-800 z-50">
+                <Link
+                  to="/notizen"
+                  className="block px-4 py-3 hover:bg-blue-50 transition rounded-t-xl"
+                >
+                  Update-Notizen
+                </Link>
+                <Link
+                  to="/versionsprotokoll"
+                  className="block px-4 py-3 hover:bg-blue-50 transition rounded-t-xl"
+                >
+                  Versionsprotokoll
+                </Link>
                 <button
                   onClick={startBackup}
-                  className="block px-4 py-2 w-full text-left bg-gray-100 hover:bg-gray-200 rounded-lg"
+                  className="block w-full text-left px-4 py-3 hover:bg-blue-50 transition rounded-b-xl"
                 >
                   Manuelles Backup
                 </button>
               </div>
             )}
           </div>
-        </div>
-      </div>
+
+          </div>
+          </div>
 
       {open && (
+
         <div className="md:hidden px-4 pb-4 flex flex-col gap-2">
           <Link to="/" className={linkClasses('/')} onClick={() => setOpen(false)}>Formular</Link>
           <Link to="/verwaltung" className={linkClasses('/verwaltung')} onClick={() => setOpen(false)}>Vorgänge</Link>

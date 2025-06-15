@@ -71,17 +71,17 @@ export default function App() {
       const safeName = recipientName.replace(/\s+/g, '-');
       const formattedDate = new Date(createdAt).toISOString().split('T')[0].replace(/-/g, '-').slice(2);
       const fileName = `${safeName}_${formattedDate}_${invoiceNumber}`;
-        
+  
       // 📄 PDF generieren
       const pdfBlob = await generatePDF({ ...formData, items });
-
+  
       if (!pdfBlob || !(pdfBlob instanceof Blob)) {
         console.error('❌ Ungültiger PDF-Blob:', pdfBlob);
         setIsSubmitting(false);
         setStatusMessage('❌ PDF konnte nicht erstellt werden.');
         return;
       }
-
+  
       const pdfFile = new File([pdfBlob], `${fileName}.pdf`, { type: 'application/pdf' });
   
       // 📤 FormData für Upload
@@ -92,7 +92,7 @@ export default function App() {
         createdAt,
         fileName,
         status: 'angelegt',
-        notizen: 'Automatisch generiert',
+        notizen: '',
       }));
       formDataToSend.append('pdf', pdfFile);
   
@@ -101,20 +101,27 @@ export default function App() {
         method: 'POST',
         body: formDataToSend,
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        toast.success('Vorgang erfolgreich erstellt');
-        navigate(`/vorgaenge/${data.id}`);
-      } else {
-        toast.error('Erstellen fehlgeschlagen');
-      }      
   
       if (!response.ok) {
-        throw new Error(`Fehler vom Server: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`Serverfehler: ${response.status} – ${errorText}`);
       }
   
-      const result = await response.json();
+      const data = await response.json();
+      toast.success('Vorgang erfolgreich erstellt');
+      console.log('✅ Antwort vom Server:', data);
+  
+      // ⬇️ PDF automatisch herunterladen
+      const blobUrl = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `${fileName}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+  
+      // 🗂️ Lokale Vorschau
       setPreviewData({
         ...formData,
         items,
@@ -122,21 +129,17 @@ export default function App() {
         fileName,
         status: 'angelegt',
         notizen: 'Automatisch generiert',
-      });      
-      console.log('✅ Antwort vom Server:', result);
-  
-      // 💾 PDF lokal speichern
-      // downloadPDF(pdfBlob, `${fileName}.pdf`);
+      });
   
       // ✅ Erfolgsmeldung
       setIsSubmitting(false);
       setIsSuccess(true);
       setStatusMessage('✅ Eintrag gespeichert – du wirst zur Übersicht weitergeleitet ...');
   
-      // ⏩ Weiterleitung zur Übersicht
+      // ⏩ Weiterleitung
       setTimeout(() => {
         navigate('/verwaltung');
-      }, 1500);      
+      }, 1500);
   
     } catch (error) {
       console.error('❌ Fehler beim Speichern:', error);
@@ -144,7 +147,7 @@ export default function App() {
       setIsSuccess(false);
       setStatusMessage('❌ Fehler beim Speichern. Bitte später erneut versuchen.');
     }
-  };
+  };  
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -370,7 +373,7 @@ export default function App() {
     disabled={isSubmitting}
     className={`${
       isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
-    } text-white font-semibold py-2 px-6 rounded-xl shadow-md transition`}
+    } text-white font-semibold py-2 px-6 rounded shadow-md transition`}
   >
     {isSubmitting ? '⏳ Wird gesendet...' : isSuccess ? '✅ Erfolgreich' : 'Atlas Eingabe erstellen'}
   </button>

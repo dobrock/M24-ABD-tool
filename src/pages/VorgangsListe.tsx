@@ -3,8 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Dialog from '@radix-ui/react-dialog';
 import { toast } from 'react-hot-toast';
+import { getFileUrl } from '@/lib/utils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const getUploadUrl = (uploads: any[], typ: string) => {
+  const eintrag = uploads.find(file =>
+    file.typ?.toLowerCase().includes(typ.toLowerCase())
+  );
+  return eintrag?.url || null;
+};
 
 interface Vorgang {
   id: string;
@@ -17,10 +24,56 @@ interface Vorgang {
   hasInvoice: number;
   hasAbd: number;
   hasAgv: number;
+  uploads?: any[];
+  formdata?: any;
 }
+
+// Icon + Tooltip + optionaler Link für ein bestimmtes Dokument
+const renderDokumentIcon = (
+  uploads: any[],
+  typ: string,
+  fallbackIcon: string,
+  label: string
+) => {
+  const url = getUploadUrl(uploads ?? [], typ);
+  const iconPath = url ? "/icons/dokument-25.png" : fallbackIcon;
+
+  return (
+    <Tooltip.Provider delayDuration={100}>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
+          <button
+            onClick={() => url && window.open(url, '_blank')}
+            disabled={!url}
+            className="hover:scale-110 transition-transform"
+          >
+            <img
+              src={iconPath}
+              className={`h-[16px] ${!url ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              alt={label}
+            />
+          </button>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content
+            className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
+            sideOffset={5}
+          >
+            {url ? `${label} herunterladen` : `Warten auf ${label}`}
+            <Tooltip.Arrow className="fill-gray-300" />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
+  );
+};
 
 export default function VorgangsListe() {
   const [vorgaenge, setVorgaenge] = useState<Vorgang[]>([]);
+  useEffect(() => {
+    console.log("📦 Vorgänge mit Uploads:", vorgaenge);
+  }, [vorgaenge]);
+  
   const navigate = useNavigate();
   
   const [editingMrnId, setEditingMrnId] = useState<string | null>(null);
@@ -125,314 +178,208 @@ export default function VorgangsListe() {
             <tbody>
               {vorgaenge.map((vorgang) => (
                 <tr key={vorgang.id} className="border-b">
-                  <td className="px-4 py-2 text-sm">
-  {vorgang.formdata?.recipient?.name || '–'}
-</td>
-                  <td className="px-4 py-2 text-sm text-center align-middle tracking-wider leading-relaxed">
-  <Tooltip.Provider delayDuration={200}>
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild>
-        <span className="inline-block w-full text-center">
-          {(() => {
-            const land = vorgang.formdata?.recipient?.country || '';
-            if (land.length === 2) return land.toUpperCase();
-            if (land === 'USA') return 'US';
-            if (land === 'China') return 'CN';
-            if (land === 'Japan') return 'JP';
-            return land.slice(0, 2).toUpperCase();
-          })()}
-        </span>
-      </Tooltip.Trigger>
-      <Tooltip.Portal>
-        <Tooltip.Content
-          className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-          sideOffset={5}
-        >
-          {vorgang.formdata?.recipient?.country || 'Unbekannt'}
-          <Tooltip.Arrow className="fill-gray-300" />
-        </Tooltip.Content>
-      </Tooltip.Portal>
-    </Tooltip.Root>
-  </Tooltip.Provider>
-</td>
-
-                  <td className="px-4 py-2 text-sm">
-  {editingMrnId === vorgang.id ? (
-    <input
-      type="text"
-      value={tempMrn}
-      autoFocus
-      onChange={(e) => setTempMrn(e.target.value)}
-      onBlur={() => updateMrn(vorgang.id, tempMrn)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') updateMrn(vorgang.id, tempMrn);
-        if (e.key === 'Escape') setEditingMrnId(null);
-      }}
-      className="w-full border border-gray-300 px-2 py-1 text-sm"
-    />
-  ) : (
-    <Tooltip.Provider delayDuration={200}>
-      <Tooltip.Root>
-        <Tooltip.Trigger asChild>
-          <span
-            className={`cursor-pointer ${vorgang.mrn ? 'truncate max-w-[160px] inline-block align-middle' : 'text-gray-200'}`}
-            onClick={() => {
-              setEditingMrnId(vorgang.id);
-              setTempMrn(vorgang.mrn || '');
-            }}
-          >
-            {vorgang.mrn || '—'}
-          </span>
-        </Tooltip.Trigger>
-        <Tooltip.Portal>
-          <Tooltip.Content
-            className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-            sideOffset={5}
-          >
-            {vorgang.mrn || 'MRN folgt'}
-            <Tooltip.Arrow className="fill-gray-300" />
-          </Tooltip.Content>
-        </Tooltip.Portal>
-      </Tooltip.Root>
-    </Tooltip.Provider>
-  )}
+                 <td className="px-4 py-2 text-sm whitespace-nowrap">
+                    {vorgang.formdata?.recipient?.name || '—'}
                   </td>
-                  <td className="px-4 py-2 text-sm whitespace-nowrap">{new Date(vorgang.erstelldatum).toLocaleDateString()}</td>
-                  <td className="px-4 py-2 text-sm w-48 whitespace-nowrap">
-  {['abd_erhalten', 'agv_vorliegend'].includes(vorgang.status) ? (
-    <span className="text-gray-600">
-      {statusIcons[vorgang.status]} {statusLabels[vorgang.status]}
-    </span>
-  ) : (
-    <Tooltip.Provider delayDuration={150}>
-      <Tooltip.Root>
-        <Tooltip.Trigger asChild>
-          <span
-            className="cursor-pointer hover:text-blue-600 transition"
-            onClick={() => toggleStatus(vorgang)}
-          >
-            {statusIcons[vorgang.status]} {statusLabels[vorgang.status]}
-          </span>
-        </Tooltip.Trigger>
-        <Tooltip.Portal>
-          <Tooltip.Content
-            className="bg-white border text-black px-3 py-1.5 rounded shadow text-sm"
-            sideOffset={5}
-          >
-            Klicken zum Statuswechsel
-            <Tooltip.Arrow className="fill-white" />
-          </Tooltip.Content>
-        </Tooltip.Portal>
-      </Tooltip.Root>
-    </Tooltip.Provider>
-  )}
-</td>
+                  <td className="px-4 py-2 text-sm text-center align-middle tracking-wider leading-relaxed">
+                <Tooltip.Provider delayDuration={200}>
+                  <Tooltip.Root>
+                    <Tooltip.Trigger asChild>
+                      <span className="inline-block w-full text-center">
+                        {(() => {
+                          const land = vorgang.formdata?.recipient?.country || '';
+                          if (land.length === 2) return land.toUpperCase();
+                          if (land === 'USA') return 'US';
+                          if (land === 'China') return 'CN';
+                          if (land === 'Japan') return 'JP';
+                          return land.slice(0, 2).toUpperCase();
+                        })()}
+                      </span>
+                    </Tooltip.Trigger>
+                    <Tooltip.Portal>
+                      <Tooltip.Content
+                        className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
+                        sideOffset={5}
+                      >
+                        {vorgang.formdata?.recipient?.country || 'Unbekannt'}
+                        <Tooltip.Arrow className="fill-gray-300" />
+                      </Tooltip.Content>
+                    </Tooltip.Portal>
+                  </Tooltip.Root>
+                </Tooltip.Provider>
+              </td>
 
-                  <td className="px-4 py-2 w-12 text-center text-lg transition-colors duration-150 whitespace-nowrap">
-                    {/* 1. Atlas PDF */}
+                  <td className="px-4 py-2 text-sm">
+                    {editingMrnId === vorgang.id ? (
+                      <input
+                        type="text"
+                        value={tempMrn}
+                        autoFocus
+                        onChange={(e) => setTempMrn(e.target.value)}
+                        onBlur={() => updateMrn(vorgang.id, tempMrn)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') updateMrn(vorgang.id, tempMrn);
+                          if (e.key === 'Escape') setEditingMrnId(null);
+                        }}
+                        className="w-full border border-gray-300 px-2 py-1 text-sm"
+                      />
+                    ) : (
                     <Tooltip.Provider delayDuration={200}>
                       <Tooltip.Root>
                         <Tooltip.Trigger asChild>
-                          <a
-                            href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/pdf`}
-                            className="mr-2 hover:text-blue-600"
+                          <span
+                            className={`cursor-pointer ${vorgang.mrn ? 'truncate max-w-[160px] inline-block align-middle' : 'text-gray-200'}`}
+                            onClick={() => {
+                              setEditingMrnId(vorgang.id);
+                              setTempMrn(vorgang.mrn || '');
+                            }}
                           >
-                            <img
-                              src="/icons/dokument-100.png"
-                              className="inline h-[16px] hover:scale-110 transition-transform duration-150"
-                              alt="Atlas PDF"
-                            />
-                          </a>
+                            {vorgang.mrn || '—'}
+                          </span>
                         </Tooltip.Trigger>
                         <Tooltip.Portal>
                           <Tooltip.Content
                             className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
                             sideOffset={5}
                           >
-                            Daten für die Ausfuhr herunterladen
-                            <Tooltip.Arrow className="fill-black" />
+                            {vorgang.mrn || 'MRN folgt'}
+                            <Tooltip.Arrow className="fill-gray-300" />
                           </Tooltip.Content>
                         </Tooltip.Portal>
                       </Tooltip.Root>
                     </Tooltip.Provider>
-
-                    {/* 2. Handelsrechnung */}
-                    {vorgang.hasInvoice ? (
-                      <a
-                        href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/rechnung`}
-                        title="Handelsrechnung herunterladen"
-                        className="mr-2 hover:text-blue-600"
-                      >
-                        <img
-                          src="/icons/dokument-25.png"
-                          className="inline h-[16px] cursor-pointer hover:scale-110 transition-transform duration-150 hover:content-[url('/icons/dokument-100.png')]"
-                          alt="Rechnung"
-                        />
-                      </a>
+                  )}
+                  </td>
+                  <td className="px-4 py-2 text-sm whitespace-nowrap">{new Date(vorgang.erstelldatum).toLocaleDateString()}</td>
+                  <td className="px-4 py-2 text-sm w-48 whitespace-nowrap">
+                    {['abd_erhalten', 'agv_vorliegend'].includes(vorgang.status) ? (
+                      <span className="text-gray-600">
+                        {statusIcons[vorgang.status]} {statusLabels[vorgang.status]}
+                      </span>
                     ) : (
-                      <Tooltip.Provider delayDuration={200}>
+                      <Tooltip.Provider delayDuration={150}>
                         <Tooltip.Root>
                           <Tooltip.Trigger asChild>
-                            <span className="mr-2 cursor-default">
-                              <img
-                                src="/icons/sanduhr-leer-25.png"
-                                className="inline h-[16px] hover:scale-110 transition-transform duration-150 hover:content-[url('/icons/sanduhr-leer-100.png')]"
-                                alt="Keine Rechnung"
-                              />
+                            <span
+                              className="cursor-pointer hover:text-blue-600 transition"
+                              onClick={() => toggleStatus(vorgang)}
+                            >
+                              {statusIcons[vorgang.status]} {statusLabels[vorgang.status]}
                             </span>
                           </Tooltip.Trigger>
                           <Tooltip.Portal>
                             <Tooltip.Content
-                              className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
+                              className="bg-white border text-black px-3 py-1.5 rounded shadow text-sm"
                               sideOffset={5}
                             >
-                              Keine Rechnung hochgeladen
-                              <Tooltip.Arrow className="fill-gray-300" />
-                            </Tooltip.Content>
-                          </Tooltip.Portal>
-                        </Tooltip.Root>
-                      </Tooltip.Provider>
-                    )}
-
-                    {/* 3. ABD/AGV */}
-                    {vorgang.hasAgv ? (
-                      <a
-                        href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/agv`}
-                        title="Ausgangsvermerk herunterladen"
-                        className="hover:text-blue-600"
-                      >
-                        <img
-                          src="/icons/dokument-25.png"
-                          className="inline h-[16px] cursor-pointer hover:scale-110 transition-transform duration-150 hover:content-[url('/icons/dokument-100.png')]"
-                          alt="AGV"
-                        />
-                      </a>
-                    ) : vorgang.hasAbd ? (
-                      <a
-                        href={`${API_BASE_URL}/api/vorgaenge/${vorgang.id}/download/abd`}
-                        title="Ausfuhrbegleitdokument herunterladen"
-                        className="hover:text-blue-600"
-                      >
-                        <img
-                          src="/icons/dokument-25.png"
-                          className="inline h-[16px] cursor-pointer hover:scale-110 transition-transform duration-150 hover:content-[url('/icons/dokument-100.png')]"
-                          alt="ABD"
-                        />
-                      </a>
-                    ) : (
-                      <Tooltip.Provider delayDuration={200}>
-                        <Tooltip.Root>
-                          <Tooltip.Trigger asChild>
-                            <span className="cursor-default">
-                              <img
-                                src="/icons/sanduhr-voll-25.png"
-                                className="inline h-[16px] hover:scale-110 transition-transform duration-150 hover:content-[url('/icons/sanduhr-voll-100.png')]"
-                                alt="Kein ABD"
-                              />
-                            </span>
-                          </Tooltip.Trigger>
-                          <Tooltip.Portal>
-                            <Tooltip.Content
-                              className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-                              sideOffset={5}
-                            >
-                              Es wurde noch kein ABD erstellt
-                              <Tooltip.Arrow className="fill-gray-300" />
+                              Klicken zum Statuswechsel
+                              <Tooltip.Arrow className="fill-white" />
                             </Tooltip.Content>
                           </Tooltip.Portal>
                         </Tooltip.Root>
                       </Tooltip.Provider>
                     )}
                   </td>
-  <td className="px-4 py-2 text-center text-sm">
-    <div className="flex justify-center items-center gap-1 text-xs transition-colors duration-150">
 
-      <Tooltip.Provider delayDuration={200}>
-        <Tooltip.Root>
-          <Tooltip.Trigger asChild>
-            <img
-              src={`/icons/stift-bunt-50.png`}
-              onMouseEnter={(e) => (e.currentTarget.src = '/icons/stift-bunt-100.png')}
-              onMouseLeave={(e) => (e.currentTarget.src = '/icons/stift-bunt-50.png')}
-              className="h-[16px] cursor-pointer transition-transform duration-150 hover:scale-110"
-              alt="Bearbeiten"
-              onClick={() => navigate(`/vorgaenge/${vorgang.id}`)}
-            />
-          </Tooltip.Trigger>
-          <Tooltip.Portal>
-            <Tooltip.Content
-              className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-              sideOffset={5}
-            >
-              Vorgang bearbeiten
-              <Tooltip.Arrow className="fill-gray-300" />
-            </Tooltip.Content>
-          </Tooltip.Portal>
-        </Tooltip.Root>
-      </Tooltip.Provider>
+                  <td className="px-4 py-2 text-center whitespace-nowrap">
+                    <div className="flex gap-1 justify-center">
+                    {renderDokumentIcon(vorgang.uploads, "pdf", "/icons/sanduhr-leer-25.png", "Atlas-Eingabedaten")}
+                    {renderDokumentIcon(vorgang.uploads, "rechnung", "/icons/sanduhr-leer-25.png", "Handelsrechnung")}
+                    {renderDokumentIcon(vorgang.uploads, "ausfuhrbegleitdokument", "/icons/sanduhr-voll-25.png", "ABD")}
+{renderDokumentIcon(vorgang.uploads, "ausgangsvermerk", "/icons/sanduhr-voll-25.png", "AGV")}
 
-      <Dialog.Root>
-        <Dialog.Trigger asChild>
-          <img
-            src="/icons/kreuz-rot-50.png"
-            onMouseEnter={(e) => (e.currentTarget.src = '/icons/kreuz-rot-100.png')}
-            onMouseLeave={(e) => (e.currentTarget.src = '/icons/kreuz-rot-50.png')}
-            className="h-[16px] cursor-pointer transition-transform duration-150 hover:scale-110"
-            alt="Löschen"
-          />
-        </Dialog.Trigger>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/30 z-40" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white border border-gray-300 rounded-lg shadow-xl p-6 z-50 max-w-sm w-full">
-            <Dialog.Title className="text-base font-medium mb-3">Vorgang löschen?</Dialog.Title>
-            <p className="text-sm text-gray-600 mb-4">Möchtest du diesen Vorgang wirklich dauerhaft löschen?</p>
-            <div className="flex justify-end gap-3">
-              <Dialog.Close asChild>
-                <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded border text-sm">Abbrechen</button>
-              </Dialog.Close>
-              <Dialog.Close asChild>
-                <button
-                  onClick={() => handleDelete(vorgang.id)}
-                  className="bg-white hover:bg-red-100 text-red-600 px-4 py-2 rounded border border-red-300 text-sm"
-                >
-                  Löschen
-                </button>
-              </Dialog.Close>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+                    </div>
+                  </td>
 
-      <Tooltip.Provider delayDuration={200}>
-        <Tooltip.Root>
-          <Tooltip.Trigger asChild>
-            <img
-              src={`/icons/haken-gruen-50.png`}
-              onMouseEnter={(e) => (e.currentTarget.src = '/icons/haken-gruen-100.png')}
-              onMouseLeave={(e) => (e.currentTarget.src = '/icons/haken-gruen-50.png')}
-              className="h-[16px] cursor-pointer transition-transform duration-150 hover:scale-110"
-              alt="Archivieren"
-              onClick={() => {
-                if (window.confirm('Vorgang als erledigt archivieren?')) {
-                  alert('✅ Vorgang archiviert (Platzhalter)');
-                }
-              }}
-            />
-          </Tooltip.Trigger>
-          <Tooltip.Portal>
-            <Tooltip.Content
-              className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-              sideOffset={5}
-            >
-              Vorgang erledigt (wird archiviert)
-              <Tooltip.Arrow className="fill-gray-300" />
-            </Tooltip.Content>
-          </Tooltip.Portal>
-        </Tooltip.Root>
-      </Tooltip.Provider>
+                <td className="px-4 py-2 text-center text-sm">
+                  <div className="flex justify-center items-center gap-1 text-xs transition-colors duration-150">
 
-    </div>
-  </td>
+                    <Tooltip.Provider delayDuration={200}>
+                      <Tooltip.Root>
+                        <Tooltip.Trigger asChild>
+                          <img
+                            src={`/icons/stift-bunt-50.png`}
+                            onMouseEnter={(e) => (e.currentTarget.src = '/icons/stift-bunt-100.png')}
+                            onMouseLeave={(e) => (e.currentTarget.src = '/icons/stift-bunt-50.png')}
+                            className="h-[16px] cursor-pointer transition-transform duration-150 hover:scale-110"
+                            alt="Bearbeiten"
+                            onClick={() => navigate(`/vorgaenge/${vorgang.id}`)}
+                          />
+                        </Tooltip.Trigger>
+                        <Tooltip.Portal>
+                          <Tooltip.Content
+                            className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
+                            sideOffset={5}
+                          >
+                            Vorgang bearbeiten
+                            <Tooltip.Arrow className="fill-gray-300" />
+                          </Tooltip.Content>
+                        </Tooltip.Portal>
+                      </Tooltip.Root>
+                    </Tooltip.Provider>
+
+                    <Dialog.Root>
+                      <Dialog.Trigger asChild>
+                        <img
+                          src="/icons/kreuz-rot-50.png"
+                          onMouseEnter={(e) => (e.currentTarget.src = '/icons/kreuz-rot-100.png')}
+                          onMouseLeave={(e) => (e.currentTarget.src = '/icons/kreuz-rot-50.png')}
+                          className="h-[16px] cursor-pointer transition-transform duration-150 hover:scale-110"
+                          alt="Löschen"
+                        />
+                      </Dialog.Trigger>
+                      <Dialog.Portal>
+                        <Dialog.Overlay className="fixed inset-0 bg-black/30 z-40" />
+                        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white border border-gray-300 rounded-lg shadow-xl p-6 z-50 max-w-sm w-full">
+                          <Dialog.Title className="text-base font-medium mb-3">Vorgang löschen?</Dialog.Title>
+                          <p className="text-sm text-gray-600 mb-4">Möchtest du diesen Vorgang wirklich dauerhaft löschen?</p>
+                          <div className="flex justify-end gap-3">
+                            <Dialog.Close asChild>
+                              <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded border text-sm">Abbrechen</button>
+                            </Dialog.Close>
+                            <Dialog.Close asChild>
+                              <button
+                                onClick={() => handleDelete(vorgang.id)}
+                                className="bg-white hover:bg-red-100 text-red-600 px-4 py-2 rounded border border-red-300 text-sm"
+                              >
+                                Löschen
+                              </button>
+                            </Dialog.Close>
+                          </div>
+                        </Dialog.Content>
+                      </Dialog.Portal>
+                    </Dialog.Root>
+
+                    <Tooltip.Provider delayDuration={200}>
+                      <Tooltip.Root>
+                        <Tooltip.Trigger asChild>
+                          <img
+                            src={`/icons/haken-gruen-50.png`}
+                            onMouseEnter={(e) => (e.currentTarget.src = '/icons/haken-gruen-100.png')}
+                            onMouseLeave={(e) => (e.currentTarget.src = '/icons/haken-gruen-50.png')}
+                            className="h-[16px] cursor-pointer transition-transform duration-150 hover:scale-110"
+                            alt="Archivieren"
+                            onClick={() => {
+                              if (window.confirm('Vorgang als erledigt archivieren?')) {
+                                alert('✅ Vorgang archiviert (Platzhalter)');
+                              }
+                            }}
+                          />
+                        </Tooltip.Trigger>
+                        <Tooltip.Portal>
+                          <Tooltip.Content
+                            className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
+                            sideOffset={5}
+                          >
+                            Vorgang erledigt (wird archiviert)
+                            <Tooltip.Arrow className="fill-gray-300" />
+                          </Tooltip.Content>
+                        </Tooltip.Portal>
+                      </Tooltip.Root>
+                    </Tooltip.Provider>
+
+                  </div>
+                </td>
                 </tr>
               ))}
             </tbody>

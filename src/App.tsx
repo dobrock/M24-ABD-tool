@@ -5,6 +5,8 @@ import ExportForm from './pages/ExportForm';
 import VorgangsListe from './pages/VorgangsListe';
 import VorgangDetail from './pages/VorgangDetail';
 import { Toaster } from 'react-hot-toast';
+import Notizen from './pages/Notizen';
+import VersionsProtokoll from './pages/VersionsProtokoll';
 
 export default function App() {
   return (
@@ -17,6 +19,8 @@ export default function App() {
             <Route path="/verwaltung" element={<VorgangsListe />} />
             <Route path="/vorgaenge/:id" element={<VorgangDetail />} />
             <Route path="*" element={<Navigate to="/" />} />
+            <Route path="/notizen" element={<Notizen />} />
+            <Route path="/versionsprotokoll" element={<VersionsProtokoll />} />
           </Routes>
         </main>
 

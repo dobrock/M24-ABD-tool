@@ -1,0 +1,23 @@
+# M24-ABD-Tool – Server (Backend)
+
+Dieses Verzeichnis enthält das Express-Backend für das M24-ABD-Tool.
+
+## ✅ Voraussetzungen
+
+- Node.js (empfohlen: v18 oder neuer)
+- `.env.local` mit den folgenden Variablen:
+
+PG_CONNECTION=...
+VITE_API_URL=...
+USE_S3=true
+S3_REGION=...
+S3_BUCKET=...
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
+S3_ENDPOINT=...
+
+## 🚀 Starten des Servers (lokal)
+
+```bash
+cd server
+node index.js
