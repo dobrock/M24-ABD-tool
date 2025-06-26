@@ -66,6 +66,7 @@ export default function VorgangDetail() {
       if (vorgang) {
         console.log('📦 Full Vorgang:', vorgang);
         console.log('🧾 Upload-Dateien:', vorgang.uploads);
+        console.log('🔍 Upload-Typen:', vorgang.uploads?.map(f => f.typ));
       }
     }, [vorgang]);
   const [showDetails, setShowDetails] = useState(false);
@@ -436,44 +437,114 @@ export default function VorgangDetail() {
               <Tooltip.Provider delayDuration={100}>
                 <Tooltip.Root>
                   <Tooltip.Trigger asChild>
-                    <button
-                      disabled={!vorgang.files?.invoice}
-                      onClick={() => {
-                        const typ = vorgang.files?.agv
-                          ? 'agv'
-                          : vorgang.files?.abd
-                          ? 'abd'
-                          : 'auftrag';
-
-                        // 1. Mail öffnen
-                        const mailto = generateEmailLink({ typ, vorgang });
-                        window.location.href = mailto;
-
-                        // 2. Benötigte Dateien im Browser öffnen
-                        const fileUrls: string[] = [];
-                        if (typ === 'abd') {
-                          if (vorgang.files?.abd) fileUrls.push(getFileUrl(vorgang.files.abd, id));
-                          if (vorgang.files?.invoice) fileUrls.push(getFileUrl(vorgang.files.invoice, id));
+                  <button
+                  disabled={!vorgang.files?.invoice}
+                  onClick={async () => {
+                    try {
+                      const checkFileExists = async (url: string) => {
+                        try {
+                          const res = await fetch(url, { method: 'HEAD' });
+                          return res.status === 200;
+                        } catch {
+                          return false;
                         }
-
-                        if (typ === 'agv') {
-                          if (vorgang.files?.agv) fileUrls.push(getFileUrl(vorgang.files.agv, id));
-                          if (vorgang.files?.abd) fileUrls.push(getFileUrl(vorgang.files.abd, id));
+                      };
+                  
+                      const hasUpload = (typ: string) =>
+                        vorgang.uploads?.some((file: any) => file.typ?.toLowerCase().includes(typ.toLowerCase()));
+                  
+                      const typ = hasUpload('ausgangsvermerk')
+                        ? 'agv'
+                        : hasUpload('ausfuhrbegleitdokument')
+                        ? 'abd'
+                        : 'auftrag';
+                  
+                      const kunde = vorgang.formdata?.recipient?.name || 'Kunde';
+                      const rechnungsnummer = vorgang.formdata?.invoiceNumber || 'Unbekannt';
+                      const empfaengerLand = vorgang.formdata?.recipient?.country || '–';
+                      const mrn = vorgang?.mrn || '';
+                      const landKuerzel = empfaengerLand.slice(0, 2).toUpperCase();
+                  
+                      let subject = '';
+                      let text = '';
+                      const attachments: { url: string; name: string }[] = [];
+                  
+                      const heute = new Date();
+                      const tag = heute.getDay();
+                      const naechsterWerktag = new Date(heute);
+                      if (tag === 5) naechsterWerktag.setDate(heute.getDate() + 3); // Fr → Mo
+                      else if (tag === 6) naechsterWerktag.setDate(heute.getDate() + 2); // Sa → Mo
+                      else naechsterWerktag.setDate(heute.getDate() + 1);
+                      const datum = naechsterWerktag.toLocaleDateString('de-DE');
+                  
+                      if (typ === 'auftrag') {
+                        subject = `Ausfuhranmeldung ${kunde} - Rg. ${rechnungsnummer}`;
+                        text = `Lieber Kunde,\n\nvielen Dank für die Beauftragung.\n\nDie eventuelle Zollbeschau wurde soeben für ${datum} von 10:00 – 12:00 Uhr angemeldet. Im Anschluss erhalten Sie das Zolldokument.\n\nViele Grüße\n\nMOTORSPORT24\nDaniel Schwab`;
+                      }
+                  
+                      if (typ === 'abd') {
+                        subject = `👉🏼 ABD ${kunde} - Rg. ${rechnungsnummer}, MRN: ${mrn}`;
+                        text = `Lieber Kunde,\n\nanbei erhalten Sie das Ausfuhrbegleitdokument.\nBitte bringen Sie es außen an der Ware an. Nach Versand erhalten Sie den AGV.\n\nViele Grüße\n\nMOTORSPORT24\nDaniel Schwab`;
+                      
+                        const abdUrl = vorgang.files?.abd;
+                        const invoiceUrl = vorgang.files?.invoice;
+                      
+                        if (abdUrl && (await checkFileExists(abdUrl))) {
+                          attachments.push({ url: abdUrl, name: `ABD_${rechnungsnummer}_${mrn}.pdf` });
+                        } else {
+                          text += `\n\n⚠️ Hinweis: ABD konnte nicht automatisch angehängt werden.`;
                         }
-
-                        for (const url of fileUrls) {
-                          window.open(url, '_blank');
+                      
+                        if (invoiceUrl && (await checkFileExists(invoiceUrl))) {
+                          attachments.push({ url: invoiceUrl, name: `Rechnung_${rechnungsnummer}.pdf` });
+                        } else {
+                          text += `\n\n⚠️ Hinweis: Rechnung konnte nicht automatisch angehängt werden.`;
                         }
-
-                        toast.success('✉️ Mail erstellt – Anhänge wurden im Browser geöffnet');
-                      }}
-                      className="hover:scale-105 transition-transform"
-                    >
-                      <img
-                        src="/icons/mail-100.png"
-                        className={`h-8 ${!vorgang.files?.invoice ? 'cursor-not-allowed opacity-25' : 'opacity-100 hover:opacity-100'}`}
-                      />
-                    </button>
+                      }                      
+                  
+                      if (typ === 'agv') {
+                        subject = `✅ AGV ${kunde} - Rg. ${rechnungsnummer}, MRN: ${mrn}`;
+                        text = `Lieber Kunde,\n\nanbei erhalten Sie den Ausgangsvermerk für Ihre Unterlagen bzw. zur Vorlage bei den Finanzbehörden.\n\nViele Grüße\n\nMOTORSPORT24\nDaniel Schwab`;
+                      
+                        const agvUrl = vorgang.files?.agv;
+                        const invoiceUrl = vorgang.files?.invoice;
+                      
+                        if (agvUrl && (await checkFileExists(agvUrl)))
+                          attachments.push({ url: agvUrl, name: `AGV_${rechnungsnummer}_${mrn}.pdf` });
+                      
+                        if (invoiceUrl && (await checkFileExists(invoiceUrl)))
+                          attachments.push({ url: invoiceUrl, name: `Rechnung_${rechnungsnummer}.pdf` });
+                      }                      
+                  
+                      const res = await fetch(`${API_BASE_URL}/api/send-email`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          to: 'danielschwab@me.com',
+                          subject,
+                          text,
+                          attachments,
+                        }),
+                      });
+                  
+                      const result = await res.json();
+                      if (result.success) {
+                        toast.success('📧 Mail erfolgreich versendet');
+                      } else {
+                        toast.error('❌ Versand fehlgeschlagen');
+                      }
+                    } catch (err) {
+                      toast.error('❌ Fehler beim E-Mail-Versand');
+                      console.error('E-Mail-Fehler:', err);
+                    }
+                  }}                  
+                  className="hover:scale-105 transition-transform"
+                >
+                  <img
+                    src="/icons/mail-100.png"
+                    className={`h-8 ${!vorgang.files?.invoice ? 'cursor-not-allowed opacity-25' : 'opacity-100 hover:opacity-100'}`}
+                  />
+                </button>
                   </Tooltip.Trigger>
                   <Tooltip.Portal>
                     <Tooltip.Content

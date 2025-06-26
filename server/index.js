@@ -44,6 +44,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// 📩 E-Mail-Router aktivieren
+const emailRoutes = require('./routes/email');
+app.use('/api', emailRoutes);
+
 console.log('📦 Verbinde mit PG:', process.env.PG_CONNECTION);
 
 const pool = new Pool({

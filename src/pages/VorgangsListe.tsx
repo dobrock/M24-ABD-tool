@@ -70,6 +70,7 @@ const renderDokumentIcon = (
 
 export default function VorgangsListe() {
   const [vorgaenge, setVorgaenge] = useState<Vorgang[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // ← 🆕 wird beim ersten Laden aktiv
   useEffect(() => {
     console.log("📦 Vorgänge mit Uploads:", vorgaenge);
   }, [vorgaenge]);
@@ -81,13 +82,16 @@ export default function VorgangsListe() {
 
   const loadVorgaenge = async () => {
     try {
+      setIsLoading(true); // 🆕 Ladezustand aktivieren
       const res = await fetch(`${API_BASE_URL}/api/vorgaenge`);
       const data = await res.json();
       setVorgaenge(data);
     } catch (err) {
       console.error('Fehler beim Laden:', err);
+    } finally {
+      setIsLoading(false); // 🆕 Ladezustand beenden – egal ob erfolgreich oder Fehler
     }
-  };
+  };  
 
   useEffect(() => {
     loadVorgaenge();
@@ -160,7 +164,16 @@ export default function VorgangsListe() {
       </h1>
 
       <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
-        {vorgaenge.length === 0 ? (
+      {isLoading ? (
+          <div className="flex items-center justify-center text-sm text-gray-500 gap-3 py-6">
+          <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          Daten werden geladen…
+        </div>
+                
+        ) : vorgaenge.length === 0 ? (
           <p>Keine Vorgänge vorhanden.</p>
         ) : (
           <table className="min-w-full bg-white table-fixed">
