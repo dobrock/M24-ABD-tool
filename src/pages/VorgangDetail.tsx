@@ -484,7 +484,7 @@ export default function VorgangDetail() {
                   
                       if (typ === 'abd') {
                         subject = `👉🏼 ABD ${kunde} - Rg. ${rechnungsnummer}, MRN: ${mrn}`;
-                        text = `Lieber Kunde,\n\nanbei erhalten Sie das Ausfuhrbegleitdokument, welches zusammen mit der Handelsrechnung an der Handelsware angebracht werden muss bzw. an der Zollausgangsstelle vorzuzeigen ist.\n\nNachdem die Ware die EU verlassen hat, erhalten Sie den Ausgangsvermerk.\n\nViele Grüße\n\nMOTORSPORT24\nDaniel Schwab\n\n`;
+                        text = `Lieber Kunde,\n\nanbei erhalten Sie das Ausfuhrbegleitdokument, welches zusammen mit der Handelsrechnung an der Ware angebracht werden muss bzw. an der Zollausgangsstelle vorzuzeigen ist.\n\nNachdem die Ware die EU verlassen hat, erhalten Sie den Ausgangsvermerk.\n\nViele Grüße\n\nMOTORSPORT24\nDaniel Schwab\n\n`;
                       
                         const abdUrl = vorgang.files?.abd;
                         const invoiceUrl = vorgang.files?.invoice;
