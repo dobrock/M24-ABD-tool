@@ -1,17 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Dialog from '@radix-ui/react-dialog';
 import { toast } from 'react-hot-toast';
 import { getFileUrl } from '@/lib/utils';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-const getUploadUrl = (uploads: any[], typ: string) => {
-  const eintrag = uploads.find(file =>
-    file.typ?.toLowerCase().includes(typ.toLowerCase())
-  );
-  return eintrag?.url || null;
-};
+import KundenDashboard from '@/components/KundenDashboard';
+import MandantenFilter from '@/components/MandantenFilter';
+import VorgangsTabelle from '@/components/VorgangsTabelle';
+import M24Dashboard from '@/components/M24Dashboard';
 
 interface Vorgang {
   id: string;
@@ -28,74 +24,97 @@ interface Vorgang {
   formdata?: any;
 }
 
-// Icon + Tooltip + optionaler Link für ein bestimmtes Dokument
-const renderDokumentIcon = (
-  uploads: any[],
-  typ: string,
-  fallbackIcon: string,
-  label: string
-) => {
-  const url = getUploadUrl(uploads ?? [], typ);
-  const iconPath = url ? "/icons/dokument-25.png" : fallbackIcon;
-
-  return (
-    <Tooltip.Provider delayDuration={100}>
-      <Tooltip.Root>
-        <Tooltip.Trigger asChild>
-          <button
-            onClick={() => url && window.open(url, '_blank')}
-            disabled={!url}
-            className="hover:scale-110 transition-transform"
-          >
-            <img
-              src={iconPath}
-              className={`h-[16px] ${!url ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-              alt={label}
-            />
-          </button>
-        </Tooltip.Trigger>
-        <Tooltip.Portal>
-          <Tooltip.Content
-            className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-            sideOffset={5}
-          >
-            {url ? `${label} herunterladen` : `Warten auf ${label}`}
-            <Tooltip.Arrow className="fill-gray-300" />
-          </Tooltip.Content>
-        </Tooltip.Portal>
-      </Tooltip.Root>
-    </Tooltip.Provider>
-  );
-};
-
 export default function VorgangsListe() {
-  const [vorgaenge, setVorgaenge] = useState<Vorgang[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // ← 🆕 wird beim ersten Laden aktiv
-  useEffect(() => {
-    console.log("📦 Vorgänge mit Uploads:", vorgaenge);
-  }, [vorgaenge]);
-  
+  const location = useLocation();
   const navigate = useNavigate();
-  
+
+  const params = new URLSearchParams(location.search);
+  const initialMandant = params.get('mandant') || 'alle';
+  console.log("📍 Übergabe Query:", location.search);
+  console.log("📌 Initialer Mandant:", initialMandant);
+
+  const [selectedMandant, setSelectedMandant] = useState(initialMandant);
+  const [vorgaenge, setVorgaenge] = useState<Vorgang[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingMrnId, setEditingMrnId] = useState<string | null>(null);
   const [tempMrn, setTempMrn] = useState<string>('');
+  const [dashboardVisible, setDashboardVisible] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const newMandant = params.get('mandant') || 'alle';
+    console.log("🔄 Mandant-Wechsel erkannt:", newMandant);
+    setSelectedMandant(newMandant);
+  }, [location.search]);
+
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+  const gefilterteVorgaenge = selectedMandant === 'alle'
+    ? vorgaenge
+    : vorgaenge.filter(v => v.mandant === selectedMandant);
+
+  const getUploadUrl = (uploads: any[], typ: string) => {
+    const eintrag = uploads.find(file =>
+      file.typ?.toLowerCase().includes(typ.toLowerCase())
+    );
+    return eintrag?.url || null;
+  };
+
+  const renderDokumentIcon = (
+    uploads: any[],
+    typ: string,
+    fallbackIcon: string,
+    label: string
+  ) => {
+    const url = getUploadUrl(uploads ?? [], typ);
+    const iconPath = url ? "/icons/dokument-25.png" : fallbackIcon;
+
+    return (
+      <Tooltip.Provider delayDuration={100}>
+        <Tooltip.Root>
+          <Tooltip.Trigger asChild>
+            <button
+              onClick={() => url && window.open(url, '_blank')}
+              disabled={!url}
+              className="hover:scale-110 transition-transform"
+            >
+              <img
+                src={iconPath}
+                className={`h-[16px] ${!url ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                alt={label}
+              />
+            </button>
+          </Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content
+              className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
+              sideOffset={5}
+            >
+              {url ? `${label} herunterladen` : `Warten auf ${label}`}
+              <Tooltip.Arrow className="fill-gray-300" />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    );
+  };
+
+  useEffect(() => {
+    loadVorgaenge();
+  }, []);
 
   const loadVorgaenge = async () => {
     try {
-      setIsLoading(true); // 🆕 Ladezustand aktivieren
+      setIsLoading(true);
       const res = await fetch(`${API_BASE_URL}/api/vorgaenge`);
       const data = await res.json();
       setVorgaenge(data);
     } catch (err) {
       console.error('Fehler beim Laden:', err);
     } finally {
-      setIsLoading(false); // 🆕 Ladezustand beenden – egal ob erfolgreich oder Fehler
+      setIsLoading(false);
     }
-  };  
-
-  useEffect(() => {
-    loadVorgaenge();
-  }, []);
+  };
 
   const toggleStatus = async (vorgang: Vorgang) => {
     const newStatus = vorgang.status === 'angelegt' ? 'ausfuhr_beantragt' : 'angelegt';
@@ -130,10 +149,10 @@ export default function VorgangsListe() {
       const res = await fetch(`${API_BASE_URL}/api/vorgaenge/${id}`, {
         method: 'DELETE',
       });
-  
+
       if (res.ok) {
         toast.success('Vorgang wurde gelöscht');
-        loadVorgaenge(); // Daten neu laden
+        loadVorgaenge();
       } else {
         toast.error('Löschen fehlgeschlagen');
       }
@@ -141,7 +160,7 @@ export default function VorgangsListe() {
       console.error('❌ Fehler beim Löschen:', err);
       toast.error('Serverfehler beim Löschen');
     }
-  };  
+  };
 
   const statusIcons: any = {
     'angelegt': '🫨',
@@ -164,239 +183,82 @@ export default function VorgangsListe() {
       </h1>
 
       <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
-      {isLoading ? (
-          <div className="flex items-center justify-center text-sm text-gray-500 gap-3 py-6">
-          <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-          </svg>
-          Daten werden geladen…
-        </div>
-                
+      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4 flex items-center gap-3">
+        <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+          Mandant auswählen
+        </label>
+        <select
+          className="border border-gray-300 px-2 py-1 rounded text-sm"
+          value={selectedMandant}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            setSelectedMandant(newValue);
+            navigate(`/vorgaenge?mandant=${newValue}`);
+          }}
+        >
+          <option value="alle">Alle</option>
+          <option value="m24">MOTORSPORT24</option>
+          <option value="kk">KK Automobile</option>
+        </select>
+      </div>
+
+  <button
+    onClick={() => setDashboardVisible(!dashboardVisible)}
+    className="text-gray-800 hover:text-gray-800 transition flex items-center gap-1 text-sm"
+  >
+    {dashboardVisible ? '▲ Statistiken ausblenden' : '▼ Statistiken anzeigen'}
+  </button>
+</div>
+
+        {dashboardVisible && selectedMandant === 'kk' && (
+          <div className="mb-6">
+            <KundenDashboard
+              visible={dashboardVisible}
+              mandantName="KK Automobile GmbH"
+              ausfuhren={gefilterteVorgaenge.length}
+              umsatz={gefilterteVorgaenge.reduce((sum, v) => sum + (v.formdata?.invoiceTotal || 0), 0)}
+              topLaender={[
+                { land: 'USA', anzahl: 4 },
+                { land: 'Norwegen', anzahl: 2 },
+              ]}
+            />
+          </div>
+        )}
+
+        {dashboardVisible && selectedMandant === 'm24' && (
+          <div className="mb-6">
+            <M24Dashboard
+              ausfuhren={gefilterteVorgaenge.length}
+              topLaender={[
+                { land: 'Norwegen', anzahl: 3 },
+                { land: 'Schweiz', anzahl: 2 },
+              ]}
+            />
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="py-6 flex flex-col items-center gap-2 w-full">
+            <div className="relative w-64 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-lime-400/60 to-transparent animate-shimmer" />
+            </div>
+            <p className="text-sm text-gray-500">Daten werden geladen…</p>
+          </div>
         ) : vorgaenge.length === 0 ? (
           <p>Keine Vorgänge vorhanden.</p>
         ) : (
-          <table className="min-w-full bg-white table-fixed">
-            <thead className="bg-gray-200 text-gray-700">
-              <tr>
-                <th className="w-80 text-left px-4 py-2 text-sm">Empfänger</th>
-                <th className="w-24 text-left px-4 py-2 text-sm">Land</th>
-                <th className="w-40 text-left px-4 py-2 text-sm">MRN</th>
-                <th className="text-left px-4 py-2 text-sm whitespace-nowrap">Erstellt am</th>
-                <th className="w-48 text-left px-4 py-2 text-sm">Status</th>
-                <th className="w-12 text-center px-4 py-2 text-sm">Dokumente</th>
-                <th className="w-20 text-center px-4 py-2 text-sm">Aktion</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vorgaenge.map((vorgang) => (
-                <tr key={vorgang.id} className="border-b">
-                 <td className="px-4 py-2 text-sm whitespace-nowrap">
-                    {vorgang.formdata?.recipient?.name || '—'}
-                  </td>
-                  <td className="px-4 py-2 text-sm text-center align-middle tracking-wider leading-relaxed">
-                <Tooltip.Provider delayDuration={200}>
-                  <Tooltip.Root>
-                    <Tooltip.Trigger asChild>
-                      <span className="inline-block w-full text-center">
-                        {(() => {
-                          const land = vorgang.formdata?.recipient?.country || '';
-                          if (land.length === 2) return land.toUpperCase();
-                          if (land === 'USA') return 'US';
-                          if (land === 'China') return 'CN';
-                          if (land === 'Japan') return 'JP';
-                          return land.slice(0, 2).toUpperCase();
-                        })()}
-                      </span>
-                    </Tooltip.Trigger>
-                    <Tooltip.Portal>
-                      <Tooltip.Content
-                        className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-                        sideOffset={5}
-                      >
-                        {vorgang.formdata?.recipient?.country || 'Unbekannt'}
-                        <Tooltip.Arrow className="fill-gray-300" />
-                      </Tooltip.Content>
-                    </Tooltip.Portal>
-                  </Tooltip.Root>
-                </Tooltip.Provider>
-              </td>
-
-                  <td className="px-4 py-2 text-sm">
-                    {editingMrnId === vorgang.id ? (
-                      <input
-                        type="text"
-                        value={tempMrn}
-                        autoFocus
-                        onChange={(e) => setTempMrn(e.target.value)}
-                        onBlur={() => updateMrn(vorgang.id, tempMrn)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') updateMrn(vorgang.id, tempMrn);
-                          if (e.key === 'Escape') setEditingMrnId(null);
-                        }}
-                        className="w-full border border-gray-300 px-2 py-1 text-sm"
-                      />
-                    ) : (
-                    <Tooltip.Provider delayDuration={200}>
-                      <Tooltip.Root>
-                        <Tooltip.Trigger asChild>
-                          <span
-                            className={`cursor-pointer ${vorgang.mrn ? 'truncate max-w-[160px] inline-block align-middle' : 'text-gray-200'}`}
-                            onClick={() => {
-                              setEditingMrnId(vorgang.id);
-                              setTempMrn(vorgang.mrn || '');
-                            }}
-                          >
-                            {vorgang.mrn || '—'}
-                          </span>
-                        </Tooltip.Trigger>
-                        <Tooltip.Portal>
-                          <Tooltip.Content
-                            className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-                            sideOffset={5}
-                          >
-                            {vorgang.mrn || 'MRN folgt'}
-                            <Tooltip.Arrow className="fill-gray-300" />
-                          </Tooltip.Content>
-                        </Tooltip.Portal>
-                      </Tooltip.Root>
-                    </Tooltip.Provider>
-                  )}
-                  </td>
-                  <td className="px-4 py-2 text-sm whitespace-nowrap">{new Date(vorgang.erstelldatum).toLocaleDateString()}</td>
-                  <td className="px-4 py-2 text-sm w-48 whitespace-nowrap">
-                    {['abd_erhalten', 'agv_vorliegend'].includes(vorgang.status) ? (
-                      <span className="text-gray-600">
-                        {statusIcons[vorgang.status]} {statusLabels[vorgang.status]}
-                      </span>
-                    ) : (
-                      <Tooltip.Provider delayDuration={150}>
-                        <Tooltip.Root>
-                          <Tooltip.Trigger asChild>
-                            <span
-                              className="cursor-pointer hover:text-blue-600 transition"
-                              onClick={() => toggleStatus(vorgang)}
-                            >
-                              {statusIcons[vorgang.status]} {statusLabels[vorgang.status]}
-                            </span>
-                          </Tooltip.Trigger>
-                          <Tooltip.Portal>
-                            <Tooltip.Content
-                              className="bg-white border text-black px-3 py-1.5 rounded shadow text-sm"
-                              sideOffset={5}
-                            >
-                              Klicken zum Statuswechsel
-                              <Tooltip.Arrow className="fill-white" />
-                            </Tooltip.Content>
-                          </Tooltip.Portal>
-                        </Tooltip.Root>
-                      </Tooltip.Provider>
-                    )}
-                  </td>
-
-                  <td className="px-4 py-2 text-center whitespace-nowrap">
-                    <div className="flex gap-1 justify-center">
-                    {renderDokumentIcon(vorgang.uploads, "pdf", "/icons/sanduhr-leer-25.png", "Atlas-Eingabedaten")}
-                    {renderDokumentIcon(vorgang.uploads, "rechnung", "/icons/sanduhr-leer-25.png", "Handelsrechnung")}
-                    {renderDokumentIcon(vorgang.uploads, "ausfuhrbegleitdokument", "/icons/sanduhr-voll-25.png", "ABD")}
-{renderDokumentIcon(vorgang.uploads, "ausgangsvermerk", "/icons/sanduhr-voll-25.png", "AGV")}
-
-                    </div>
-                  </td>
-
-                <td className="px-4 py-2 text-center text-sm">
-                  <div className="flex justify-center items-center gap-1 text-xs transition-colors duration-150">
-
-                    <Tooltip.Provider delayDuration={200}>
-                      <Tooltip.Root>
-                        <Tooltip.Trigger asChild>
-                          <img
-                            src={`/icons/stift-bunt-50.png`}
-                            onMouseEnter={(e) => (e.currentTarget.src = '/icons/stift-bunt-100.png')}
-                            onMouseLeave={(e) => (e.currentTarget.src = '/icons/stift-bunt-50.png')}
-                            className="h-[16px] cursor-pointer transition-transform duration-150 hover:scale-110"
-                            alt="Bearbeiten"
-                            onClick={() => navigate(`/vorgaenge/${vorgang.id}`)}
-                          />
-                        </Tooltip.Trigger>
-                        <Tooltip.Portal>
-                          <Tooltip.Content
-                            className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-                            sideOffset={5}
-                          >
-                            Vorgang bearbeiten
-                            <Tooltip.Arrow className="fill-gray-300" />
-                          </Tooltip.Content>
-                        </Tooltip.Portal>
-                      </Tooltip.Root>
-                    </Tooltip.Provider>
-
-                    <Dialog.Root>
-                      <Dialog.Trigger asChild>
-                        <img
-                          src="/icons/kreuz-rot-50.png"
-                          onMouseEnter={(e) => (e.currentTarget.src = '/icons/kreuz-rot-100.png')}
-                          onMouseLeave={(e) => (e.currentTarget.src = '/icons/kreuz-rot-50.png')}
-                          className="h-[16px] cursor-pointer transition-transform duration-150 hover:scale-110"
-                          alt="Löschen"
-                        />
-                      </Dialog.Trigger>
-                      <Dialog.Portal>
-                        <Dialog.Overlay className="fixed inset-0 bg-black/30 z-40" />
-                        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white border border-gray-300 rounded-lg shadow-xl p-6 z-50 max-w-sm w-full">
-                          <Dialog.Title className="text-base font-medium mb-3">Vorgang löschen?</Dialog.Title>
-                          <p className="text-sm text-gray-600 mb-4">Möchtest du diesen Vorgang wirklich dauerhaft löschen?</p>
-                          <div className="flex justify-end gap-3">
-                            <Dialog.Close asChild>
-                              <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded border text-sm">Abbrechen</button>
-                            </Dialog.Close>
-                            <Dialog.Close asChild>
-                              <button
-                                onClick={() => handleDelete(vorgang.id)}
-                                className="bg-white hover:bg-red-100 text-red-600 px-4 py-2 rounded border border-red-300 text-sm"
-                              >
-                                Löschen
-                              </button>
-                            </Dialog.Close>
-                          </div>
-                        </Dialog.Content>
-                      </Dialog.Portal>
-                    </Dialog.Root>
-
-                    <Tooltip.Provider delayDuration={200}>
-                      <Tooltip.Root>
-                        <Tooltip.Trigger asChild>
-                          <img
-                            src={`/icons/haken-gruen-50.png`}
-                            onMouseEnter={(e) => (e.currentTarget.src = '/icons/haken-gruen-100.png')}
-                            onMouseLeave={(e) => (e.currentTarget.src = '/icons/haken-gruen-50.png')}
-                            className="h-[16px] cursor-pointer transition-transform duration-150 hover:scale-110"
-                            alt="Archivieren"
-                            onClick={() => {
-                              if (window.confirm('Vorgang als erledigt archivieren?')) {
-                                alert('✅ Vorgang archiviert (Platzhalter)');
-                              }
-                            }}
-                          />
-                        </Tooltip.Trigger>
-                        <Tooltip.Portal>
-                          <Tooltip.Content
-                            className="bg-white text-gray-900 border border-gray-300 text-sm px-4 py-2 rounded shadow-md z-50"
-                            sideOffset={5}
-                          >
-                            Vorgang erledigt (wird archiviert)
-                            <Tooltip.Arrow className="fill-gray-300" />
-                          </Tooltip.Content>
-                        </Tooltip.Portal>
-                      </Tooltip.Root>
-                    </Tooltip.Provider>
-
-                  </div>
-                </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <VorgangsTabelle
+            vorgaenge={gefilterteVorgaenge}
+            onEdit={(id) => navigate(`/vorgaenge/${id}`)}
+            onDelete={handleDelete}
+            onStatusToggle={toggleStatus}
+            onMrnUpdate={updateMrn}
+            editingMrnId={editingMrnId}
+            setEditingMrnId={setEditingMrnId}
+            tempMrn={tempMrn}
+            setTempMrn={setTempMrn}
+          />
         )}
       </div>
     </div>

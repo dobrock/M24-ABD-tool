@@ -13,16 +13,15 @@ export default function App() {
     <Router>
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         <Navigation />
-        <main className="pt-2 px-4">
-          <Routes>
-            <Route path="/" element={<ExportForm />} />
-            <Route path="/verwaltung" element={<VorgangsListe />} />
-            <Route path="/vorgaenge/:id" element={<VorgangDetail />} />
-            <Route path="*" element={<Navigate to="/" />} />
-            <Route path="/notizen" element={<Notizen />} />
-            <Route path="/versionsprotokoll" element={<VersionsProtokoll />} />
-          </Routes>
-        </main>
+        <Routes>
+          <Route path="/" element={<ExportForm />} />
+          <Route path="/verwaltung" element={<VorgangsListe />} />
+          <Route path="/vorgaenge" element={<VorgangsListe />} /> {/* ← NEU */}
+          <Route path="/vorgaenge/:id" element={<VorgangDetail />} />
+          <Route path="/notizen" element={<Notizen />} />
+          <Route path="/versionsprotokoll" element={<VersionsProtokoll />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
 
         {/* ✅ Toaster für Erfolg/Fehler-Meldungen – sichtbar oben zentriert */}
         <Toaster

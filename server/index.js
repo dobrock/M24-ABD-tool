@@ -102,9 +102,9 @@ const initDB = async () => {
   
       await pool.query(
         `INSERT INTO vorgaenge (
-          id, erstelldatum, mrn, empfaenger, land, waren, status, notizen, formdata
+          id, erstelldatum, mrn, empfaenger, land, waren, status, notizen, formdata, mandant
         ) VALUES (
-          $1, NOW(), $2, $3, $4, $5, $6, $7, $8
+          $1, NOW(), $2, $3, $4, $5, $6, $7, $8, $9
         )`,
         [
           id,
@@ -114,9 +114,10 @@ const initDB = async () => {
           waren,
           status || 'angelegt',
           notizen || '',
-          parsedData
+          parsedData.formdata || {},     // ✅ nur die echten Formulardaten
+          parsedData?.mandant || 'm24'   // ✅ sauber auf Top-Level
         ]
-      );
+      );      
 
       // ✅ Neue, sprechende Dateinamen
       const kunde = parsedData.recipient?.name?.trim() || 'Unbekannt';

@@ -5,7 +5,6 @@ import VorgangsTest from '../components/VorgangsTest';
 import { downloadPDF } from '../components/downloadPDF';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { useLocation } from 'react-router-dom';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 console.log('🧪 API_BASE_URL:', API_BASE_URL);
@@ -14,11 +13,6 @@ export default function App() {
   const [items, setItems] = useState([
     { description: '', tariff: '', weight: '', value: '' }
   ]);
-  const location = useLocation();
-  const params = new URLSearchParams(location.search);
-  const initialMandant = params.get('mandant') || 'm24';
-  const [mandant, setMandant] = useState(initialMandant);
-  console.log('📌 Mandant (ExportForm):', mandant);
   const navigate = useNavigate();
   const [previewData, setPreviewData] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -93,7 +87,7 @@ export default function App() {
       // 📤 FormData für Upload
       const formDataToSend = new FormData();
       formDataToSend.append('data', JSON.stringify({
-        mandant: mandant,         // Top-Level
+        mandant: 'm24',           // Top-Level
         status: 'angelegt',       // Top-Level
         fileName,                 // Top-Level
         createdAt,                // Top-Level
@@ -165,27 +159,12 @@ export default function App() {
   const [statusMessage, setStatusMessage] = useState('');
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-4 pb-12 px-4 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6 max-w-4xl mx-auto pl-10">
-        Neue Ausfuhranmeldung
-      </h1>
+<div className="min-h-screen bg-gray-50 pt-4 pb-12 px-4 sm:px-6 lg:px-8">
+  <h1 className="text-2xl font-bold text-gray-800 mb-6 max-w-4xl mx-auto pl-10">
+    Neue Ausfuhranmeldung
+  </h1>
 
-      <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
-
-        {/* Block 0: Mandant */}
-        <div className="mb-6 flex items-center gap-3">
-        <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-        Mandant auswählen
-        </label>
-        <select
-        className="border border-gray-300 px-2 py-1 rounded text-sm"
-        value={mandant}
-        onChange={(e) => setMandant(e.target.value)}
-      >
-        <option value="m24">MOTORSPORT24</option>
-        <option value="kk">KK Automobile</option>
-        </select>
-        </div>
+  <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
 
 
         {/* Block I: Ware */}
